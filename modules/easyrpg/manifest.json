@@ -3,7 +3,7 @@
     "version": "1.0.1",
     "description": "A module to launch RPG Maker 2000/2003 games with EasyRPG Player.",
     "author": "m5kro",
-    "license": "CC BY-NC-SA 4.0",
+    "license": "GPL-3.0",
     "dependencies": {
         "player": {
             "universal": {

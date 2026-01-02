@@ -2,6 +2,9 @@ name: Update README Available Modules
 
 on:
   workflow_dispatch:
+  push:
+  paths:
+    - "modules/**"
 
 permissions:
   contents: write
@@ -83,7 +86,7 @@ jobs:
           rows.sort(key=lambda r: r[0].casefold())
 
           table_lines = [
-              "| Module Name | Version | Author | License | Description |",
+              "| Name | Version | Author | License | Description |",
               "| :----------------: | :--------: | :----------------: | :----------------: | :---- |",
           ]
           for (name, version, author, license_, desc) in rows:

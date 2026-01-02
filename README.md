@@ -7,8 +7,8 @@ Please read [module-docs.md](https://github.com/m5kro/Xenolauncher-Modules/blob/
 
 | Name | Version | Author | License | Description |
 | :----------------: | :--------: | :----------------: | :----------------: | :---- |
-| EasyRPG | 1.0.1 | m5kro | CC BY-NC-SA 4.0 | A module to launch RPG Maker 2000/2003 games with EasyRPG Player. |
+| EasyRPG | 1.0.1 | m5kro | GPL-3.0 | A module to launch RPG Maker 2000/2003 games with EasyRPG Player. |
 | MacOS | 1.0.0 | m5kro | MIT | A default module to launch MacOS native games. |
-| MKXP-Z | 1.0.0 | m5kro | CC BY-NC-SA 4.0 | A module to launch MKXP-Z native games like RPG Maker XP, VX, and VX Ace. |
-| NW.js | 1.3.2 | m5kro | CC BY-NC-SA 4.0 | A module to launch NW.js native games like RPG Maker MV and MZ. |
+| MKXP-Z | 1.0.0 | m5kro | GPL-3.0 | A module to launch MKXP-Z native games like RPG Maker XP, VX, and VX Ace. |
+| NW.js | 1.3.2 | m5kro | GPL-3.0 | A module to launch NW.js native games like RPG Maker MV and MZ. |
 

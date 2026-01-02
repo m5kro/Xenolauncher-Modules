@@ -3,6 +3,8 @@ name: Update README Available Modules
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
     paths:
       - "modules/**"
 

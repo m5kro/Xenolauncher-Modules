@@ -1,0 +1,137 @@
+name: Update README Available Modules
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Rebuild "Available Modules" section in README.md
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json, re
+
+          README = Path("README.md")
+          MODULES_DIR = Path("modules")
+
+          if not README.exists():
+              raise SystemExit("README.md not found")
+
+          def normalize_cell(v):
+              if v is None:
+                  v = ""
+              if isinstance(v, (dict, list)):
+                  v = json.dumps(v, ensure_ascii=False)
+              v = str(v).replace("\r", " ").replace("\n", " ")
+              v = re.sub(r"\s+", " ", v).strip()
+              # Escape pipes for markdown tables
+              v = v.replace("|", r"\|")
+              return v
+
+          def find_manifests():
+              if not MODULES_DIR.exists():
+                  return []
+              manifests = []
+              # depth 1 and 2 under /modules
+              for pat in ("*/manifest.json", "*/*/manifest.json"):
+                  manifests.extend(MODULES_DIR.glob(pat))
+              # Deduplicate
+              seen = set()
+              uniq = []
+              for p in manifests:
+                  rp = str(p.resolve())
+                  if rp in seen:
+                      continue
+                  seen.add(rp)
+                  uniq.append(p)
+              return uniq
+
+          rows = []
+          for manifest_path in find_manifests():
+              try:
+                  data = json.loads(manifest_path.read_text(encoding="utf-8"))
+              except Exception:
+                  # Skip unreadable/invalid JSON
+                  continue
+
+              name = normalize_cell(data.get("name", ""))
+              version = normalize_cell(data.get("version", ""))
+              author = normalize_cell(data.get("author", ""))
+              license_ = normalize_cell(data.get("license", ""))
+              desc = normalize_cell(data.get("description", ""))
+
+              # Only include if it looks like a real module entry (has at least a name)
+              if name:
+                  rows.append((name, version, author, license_, desc))
+
+          # Sort by module name (case-insensitive)
+          rows.sort(key=lambda r: r[0].casefold())
+
+          table_lines = [
+              "| Module Name | Version | Author | License | Description |",
+              "| :----------------: | :--------: | :----------------: | :----------------: | :---- |",
+          ]
+          for (name, version, author, license_, desc) in rows:
+              table_lines.append(f"| {name} | {version} | {author} | {license_} | {desc} |")
+
+          content = README.read_text(encoding="utf-8")
+          lines = content.splitlines(True)  # keep line endings
+
+          header_re = re.compile(r"^#\s*Available Modules\s*$")
+          any_heading_re = re.compile(r"^#+")
+
+          start = None
+          for i, line in enumerate(lines):
+              if header_re.match(line.rstrip("\n").rstrip("\r")):
+                  start = i
+                  break
+
+          new_block = ["\n"] + [l + "\n" for l in table_lines] + ["\n"]
+
+          if start is None:
+              # If the section doesn't exist, append it to the end
+              if content and not content.endswith("\n"):
+                  lines.append("\n")
+              lines.append("# Available Modules\n")
+              lines.extend(new_block)
+          else:
+              # Replace everything until the next heading (any line starting with '#')
+              end = len(lines)
+              for j in range(start + 1, len(lines)):
+                  if any_heading_re.match(lines[j]):
+                      end = j
+                      break
+              lines = lines[: start + 1] + new_block + lines[end:]
+
+          README.write_text("".join(lines), encoding="utf-8")
+          print(f"Updated {README} with {len(rows)} module(s).")
+          PY
+
+      - name: Commit and push if README changed
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add README.md
+          git commit -m "Update Available Modules in README"
+          git push

@@ -5,7 +5,7 @@ Please read [module-docs.md](https://github.com/m5kro/Xenolauncher-Modules/blob/
 
 # Available Modules
 
-| Module Name | Version | Author | License | Description |
+| Name | Version | Author | License | Description |
 | :----------------: | :--------: | :----------------: | :----------------: | :---- |
 | EasyRPG | 1.0.1 | m5kro | CC BY-NC-SA 4.0 | A module to launch RPG Maker 2000/2003 games with EasyRPG Player. |
 | MacOS | 1.0.0 | m5kro | MIT | A default module to launch MacOS native games. |

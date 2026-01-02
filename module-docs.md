@@ -242,6 +242,7 @@ These are the required variables for autodetect:
 | Name | Type | Description |
 | :------------: | :----------: | :---- |
 | `files` | `array` | A file list, supports folders and path traversal |
+| `extensions` | `array` | File extention list, if file names change between games |
 | `all_required` | `boolean` | If all the files need to be present for the autodetect to succeed<br> If false, the best match will be selected |
 
 ### Example

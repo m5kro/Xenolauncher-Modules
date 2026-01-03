@@ -1,0 +1,242 @@
+{
+    "name": "Ruffle",
+    "version": "1.0.3",
+    "description": "Launch Flash games using the Ruffle emulator.",
+    "author": "m5kro",
+    "license": "GPL-3.0",
+    "dependencies": {
+        "ruffle": {
+            "universal": {
+                "link": "https://github.com/ruffle-rs/ruffle/releases/download/nightly-2026-01-02/ruffle-nightly-2026_01_02-macos-universal.tar.gz",
+                "unzip": true
+            }
+        }
+    },
+    "updates": true,
+    "autodetect": {
+        "extensions": ["swf"],
+        "all_required": false
+    },
+    "gameArgs": {
+        "flashvars": {
+            "type": "array",
+            "label": "Flashvars (-P key=value, repeatable)",
+            "default": []
+        },
+
+        "graphics": {
+            "type": "dropdown",
+            "label": "Graphics Backend (-g/--graphics)",
+            "default": "",
+            "options": [
+                { "label": "Default (auto)", "value": "" },
+                { "label": "Vulkan", "value": "vulkan" },
+                { "label": "Metal", "value": "metal" },
+                { "label": "DirectX 12", "value": "dx12" },
+                { "label": "OpenGL", "value": "gl" }
+            ]
+        },
+        "power": {
+            "type": "dropdown",
+            "label": "GPU Power Preference (-p/--power)",
+            "default": "",
+            "options": [
+                { "label": "Default (auto)", "value": "" },
+                { "label": "Low (integrated)", "value": "low" },
+                { "label": "High (dedicated)", "value": "high" }
+            ]
+        },
+
+        "width": { "type": "int", "label": "Window Width (--width, 0=auto)", "default": 0 },
+        "height": { "type": "int", "label": "Window Height (--height, 0=auto)", "default": 0 },
+
+        "storage": {
+            "type": "dropdown",
+            "label": "Storage Backend (--storage)",
+            "default": "",
+            "options": [
+                { "label": "Default (auto)", "value": "" },
+                { "label": "Disk", "value": "disk" },
+                { "label": "Memory", "value": "memory" }
+            ]
+        },
+        "saveDirectory": {
+            "type": "string",
+            "label": "Save Directory (--save-directory, blank=default)",
+            "default": ""
+        },
+        "configDirectory": {
+            "type": "string",
+            "label": "Config Directory (--config, blank=default)",
+            "default": ""
+        },
+        "cacheDirectory": {
+            "type": "string",
+            "label": "Cache Directory (--cache-directory, blank=default)",
+            "default": ""
+        },
+
+        "maxExecutionDuration": {
+            "type": "int",
+            "label": "Max Script Execution (seconds) (-m/--max-execution-duration, 0=unlimited)",
+            "default": 0
+        },
+        "base": {
+            "type": "string",
+            "label": "Base Directory/URL (--base, blank=current dir)",
+            "default": ""
+        },
+
+        "quality": {
+            "type": "dropdown",
+            "label": "Movie Quality (-q/--quality, blank=default)",
+            "default": "",
+            "options": [
+                { "label": "Default (auto)", "value": "" },
+                { "label": "Low", "value": "low" },
+                { "label": "Medium", "value": "medium" },
+                { "label": "High", "value": "high" },
+                { "label": "Best", "value": "best" },
+                { "label": "High 8x8", "value": "high8x8" },
+                { "label": "High 8x8 (linear)", "value": "high8x8-linear" },
+                { "label": "High 16x16", "value": "high16x16" },
+                { "label": "High 16x16 (linear)", "value": "high16x16-linear" }
+            ]
+        },
+
+        "align": {
+            "type": "string",
+            "label": "Stage Alignment (-a/--align, blank=default)",
+            "default": ""
+        },
+        "forceAlign": { "type": "boolean", "label": "Force Stage Alignment (--force-align)", "default": false },
+
+        "scale": {
+            "type": "dropdown",
+            "label": "Stage Scale Mode (-s/--scale)",
+            "default": "",
+            "options": [
+                { "label": "Default (auto)", "value": "" },
+                { "label": "Show All (default)", "value": "show-all" },
+                { "label": "Exact Fit", "value": "exact-fit" },
+                { "label": "No Border", "value": "no-border" },
+                { "label": "No Scale", "value": "no-scale" }
+            ]
+        },
+        "forceScale": { "type": "boolean", "label": "Force Stage Scale Mode (--force-scale)", "default": false },
+
+        "volume": { "type": "float", "label": "Audio Volume (-v/--volume, 0..1)", "default": 1.0 },
+
+        "proxy": { "type": "string", "label": "Proxy (--proxy)", "default": "" },
+
+        "socketAllow": {
+            "type": "array",
+            "label": "Socket Allowlist (--socket-allow host:port)",
+            "default": []
+        },
+        "tcpConnections": {
+            "type": "dropdown",
+            "label": "TCP Socket Policy (--tcp-connections)",
+            "default": "ask",
+            "options": [
+                { "label": "Ask (default)", "value": "ask" },
+                { "label": "Allow", "value": "allow" },
+                { "label": "Deny", "value": "deny" }
+            ]
+        },
+
+        "upgradeToHttps": {
+            "type": "boolean",
+            "label": "Upgrade HTTP URLs to HTTPS (--upgrade-to-https)",
+            "default": true
+        },
+
+        "fullscreen": { "type": "boolean", "label": "Start Fullscreen (--fullscreen)", "default": false },
+
+        "loadBehavior": {
+            "type": "dropdown",
+            "label": "Load Behavior (--load-behavior, blank=default)",
+            "default": "",
+            "options": [
+                { "label": "Default (auto)", "value": "" },
+                { "label": "Streaming", "value": "streaming" },
+                { "label": "Delayed", "value": "delayed" },
+                { "label": "Blocking", "value": "blocking" }
+            ]
+        },
+
+        "letterbox": {
+            "type": "dropdown",
+            "label": "Letterbox Mode (--letterbox, blank=default)",
+            "default": "",
+            "options": [
+                { "label": "Default (auto)", "value": "" },
+                { "label": "Off", "value": "off" },
+                { "label": "Fullscreen Only", "value": "fullscreen" },
+                { "label": "On", "value": "on" }
+            ]
+        },
+
+        "spoofUrl": { "type": "string", "label": "Spoof Root SWF URL (--spoof-url)", "default": "" },
+        "referer": { "type": "string", "label": "Spoof HTTP Referer (--referer)", "default": "" },
+        "cookie": { "type": "string", "label": "Spoof HTTP Cookie (--cookie, \"a=b; c=d\")", "default": "" },
+
+        "playerVersion": {
+            "type": "int",
+            "label": "Player Version Emulation (--player-version, 0=default)",
+            "default": 0
+        },
+        "playerRuntime": {
+            "type": "dropdown",
+            "label": "Player Runtime (--player-runtime)",
+            "default": "flash-player",
+            "options": [
+                { "label": "Flash Player (default)", "value": "flash-player" },
+                { "label": "Adobe AIR", "value": "air" }
+            ]
+        },
+
+        "frameRate": { "type": "int", "label": "Override Frame Rate (--frame-rate, 0=auto)", "default": 0 },
+
+        "openUrlMode": {
+            "type": "dropdown",
+            "label": "Open-URL Mode (--open-url-mode)",
+            "default": "confirm",
+            "options": [
+                { "label": "Confirm (default)", "value": "confirm" },
+                { "label": "Allow", "value": "allow" },
+                { "label": "Deny", "value": "deny" }
+            ]
+        },
+
+        "filesystemAccessMode": {
+            "type": "dropdown",
+            "label": "Filesystem Access (--filesystem-access-mode)",
+            "default": "ask",
+            "options": [
+                { "label": "Allow", "value": "allow" },
+                { "label": "Deny", "value": "deny" },
+                { "label": "Ask (default)", "value": "ask" }
+            ]
+        },
+
+        "dummyExternalInterface": {
+            "type": "boolean",
+            "label": "Dummy ExternalInterface (--dummy-external-interface)",
+            "default": false
+        },
+        "noGui": { "type": "boolean", "label": "Hide Menu Bar (--no-gui)", "default": false },
+
+        "gamepadButton": {
+            "type": "array",
+            "label": "Gamepad Remap (-B button=key, repeatable)",
+            "default": []
+        },
+
+        "noAvm2Optimizer": {
+            "type": "boolean",
+            "label": "Disable AVM2 Optimizer (--no-avm2-optimizer)",
+            "default": false
+        }
+    }
+}

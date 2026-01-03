@@ -84,7 +84,7 @@ const launch = (gamePath, gameFolder, gameArgs) => {
     // Launch the game, gameArgs currently not used
     if (arch === "arm64") {
         console.log("Apple Silicon detected, using rosetta2 to launch the game");
-        exec(`arch -x86_64 "${wineBinary}" "${gamePath}"`, { env: { WINEPREFIX: winePrefix } }, (error, stdout, stderr) => {
+        exec(`arch --x86_64 "${wineBinary}" "${gamePath}"`, { env: { WINEPREFIX: winePrefix } }, (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error launching game: ${error.message}`);
                 return;

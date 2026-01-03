@@ -4,6 +4,12 @@
 # Manifest
 Every module must come with a manifest.json file to let the launcher know about it.
 ## Required
+> [!WARNING]
+> Your module path name is not the name set in the json. The parent folder name is used in the path.
+> For example: 
+> `MKXP-Z` is the manifest name, `mkxpz` is the module folder name.
+> So the module path will be `~/Library/Application Support/xenolauncher/modules/mkxpz/`
+
 | Name | Type | Description |
 | :------------: | :----------: | :---- |
 | `name` | `string` | module name (no spaces) |

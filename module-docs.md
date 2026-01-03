@@ -127,7 +127,7 @@ An array with multiple values of the same type. Users can add or remove values f
 If there are multiple versions of something that can be used. For example, if a tool introduces a bug in between versions, or different versions of the same tool have varying degrees of support for a game, etc.
 
 > [!NOTE]
-> Each multi-version variable must come with a version script that returns an array of available versions. It is not in the same format as the dependency system, so watch out.
+> Each multi-version variable must come with a version script that returns an array of available versions. It is not in the same format as the dependency system, so watch out. It should also start with `async function getAvailable() {` and end with `exports.getAvailable = getAvailable;`.
 
 A version script is used to determine what has already been installed and what is available. <br>
 Format:

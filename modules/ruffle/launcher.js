@@ -2,7 +2,7 @@
 // Some ruffle cli args just don't work for some reason, probably why ruffle is still in prerelease
 // There is also an issue with an h264 dylib not having the right permissions, so some swfs may not work unless you manually fix that
 // Once again this is apple, making things difficult for no reason
-const launch = (gamePath, gameFolder, gameArgs) => {
+function launch(gamePath, gameFolder, gameArgs) {
     const path = require("path");
     const { exec } = require("child_process");
     const fs = require("fs");
@@ -27,6 +27,59 @@ const launch = (gamePath, gameFolder, gameArgs) => {
     if (!fs.existsSync(ruffleBinary)) {
         console.error(`Ruffle binary not found at ${ruffleBinary}`);
         return;
+    }
+
+    // helper to fix h264 dylib permissions (only works after first launch)
+    function findH264Dylib() {
+        const videoDir = path.join(
+            os.homedir(),
+            "Library",
+            "Containers",
+            "rs.ruffle.ruffle",
+            "Data",
+            "Library",
+            "Caches",
+            "ruffle",
+            "video"
+        );
+
+        let entries;
+        try {
+            entries = fs.readdirSync(videoDir, { withFileTypes: true });
+        } catch {
+            return null; // dir doesn't exist yet
+        }
+
+        const arch = os.arch() === "arm64" ? "mac-arm64" : "mac-x64";
+
+        // Prefer exact arch match, but also fall back to any libopenh264 dylib if needed.
+        const candidates = entries
+            .filter((e) => e.isFile())
+            .map((e) => e.name)
+            .filter((name) => name.startsWith("libopenh264-") && name.endsWith(".dylib"));
+
+        if (candidates.length === 0) return null;
+
+        const preferred =
+            candidates.find((n) => n.includes(arch)) ||
+            candidates[0];
+
+        const fullPath = path.join(videoDir, preferred);
+
+        // Ensure it's actually present and non-empty
+        try {
+            const st = fs.statSync(fullPath);
+            if (st.isFile() && st.size > 0) return fullPath;
+        } catch {
+            // ignore
+        }
+        return null;
+    }
+
+    function fixH264DylibPermissions(h264DylibPath) {
+        exec(`chown -R "${os.userInfo().uid}" "${h264DylibPath}"`, () => {});
+        exec(`xattr -cr "${h264DylibPath}"`, () => {});
+        exec(`chmod -R 700 "${h264DylibPath}"`, () => {});
     }
 
     // Build CLI args from gameArgs. This is a terrible way to do and will be replaced later.
@@ -183,10 +236,12 @@ const launch = (gamePath, gameFolder, gameArgs) => {
     const cmd = [ruffleBinary, ...args].map(shEscape).join(" ");
     console.log(`[ruffle] Launching: ${cmd}`);
 
+    fixH264DylibPermissions(findH264Dylib());
+
     exec(cmd, { cwd: gameFolder, maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
         if (stdout) console.log(stdout);
         if (stderr) console.error(stderr);
         if (error) console.error(`[ruffle] Failed to launch: ${error.message}`);
     });
-};
+}
 exports.launch = launch;

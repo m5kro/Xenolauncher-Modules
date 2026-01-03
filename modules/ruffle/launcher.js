@@ -26,6 +26,27 @@ const launch = (gamePath, gameFolder, gameArgs) => {
         return;
     }
 
+    // h264 dylib permissions fix for macOS
+    // Bad Apple 
+    const h264DylibPath = path.join(
+        os.homedir(),
+        "Library",
+        "Containers",
+        "rs.ruffle.ruffle",
+        "Data",
+        "Library",
+        "Caches",
+        "ruffle",
+        "video",
+        "libopenh264-2.4.1-mac-x64.dylib"
+    );
+
+    if (fs.existsSync(h264DylibPath)) {
+        exec(`chown -R "${os.userInfo().uid}" "${h264DylibPath}"`, () => {});
+        exec(`xattr -cr "${h264DylibPath}"`, () => {});
+        exec(`chmod -R 700 "${h264DylibPath}"`, () => {});
+    }
+
     // Build CLI args from gameArgs. This is a terrible way to do and will be replaced later.
     const args = [];
 

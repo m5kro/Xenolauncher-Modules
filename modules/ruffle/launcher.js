@@ -169,11 +169,18 @@ const launch = (gamePath, gameFolder, gameArgs) => {
     // Finally add the SWF path (or URL)
     args.push(gamePath);
 
-    // Launch (use execFile so quoting is handled correctly)
-    const { execFile } = require("child_process");
-    console.log(`[ruffle] Launching: ${ruffleBinary} ${args.map((a) => JSON.stringify(a)).join(" ")}`);
+    function shEscape(v) {
+        const s = String(v ?? "");
+        // POSIX shell escaping (macOS): wrap in single quotes, escape embedded single quotes
+        // foo'bar -> 'foo'\''bar'
+        if (s.length === 0) return "''";
+        return `'${s.replace(/'/g, `'\\''`)}'`;
+    }
 
-    execFile(ruffleBinary, args, { cwd: gameFolder }, (error, stdout, stderr) => {
+    const cmd = [ruffleBinary, ...args].map(shEscape).join(" ");
+    console.log(`[ruffle] Launching: ${cmd}`);
+
+    exec(cmd, { cwd: gameFolder, maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
         if (stdout) console.log(stdout);
         if (stderr) console.error(stderr);
         if (error) console.error(`[ruffle] Failed to launch: ${error.message}`);

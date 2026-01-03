@@ -1,5 +1,5 @@
 // Launches RPG Maker 2000/2003 games using EasyRPG Player.
-const launch = (gamePath, gameFolder, gameArgs) => {
+function launch(gamePath, gameFolder, gameArgs) {
     const path = require("path");
     const { exec } = require("child_process");
     const fs = require("fs");

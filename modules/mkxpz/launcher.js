@@ -1,5 +1,5 @@
 // Launches RPG VX Ace, VX, and XP games using MKXP-Z
-const launch = (gamePath, gameFolder, gameArgs = {}) => {
+function launch(gamePath, gameFolder, gameArgs = {}) {
     const fs = require("fs");
     const path = require("path");
     const os = require("os");

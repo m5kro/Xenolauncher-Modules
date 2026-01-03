@@ -6,7 +6,7 @@
 // Handle installers
 // Multiple Wine versions
 // Winetricks to make everything a bit easier
-const launch = (gamePath, gameFolder, gameArgs) => {
+function launch(gamePath, gameFolder, gameArgs) {
     const path = require("path");
     const { exec } = require("child_process");
     const fs = require("fs");

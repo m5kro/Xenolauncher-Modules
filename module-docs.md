@@ -185,11 +185,11 @@ launcher.js is the connector between xenolauncher and the compatability layer be
 Taking in the gameFolder variable is optional, it's mostly there for convienience. You can use any default nodejs imports but any others will need to be installed through the dependency system as js files.
 
 > [!TIP]
-> You don't need to include permission fixes, Xenolauncher will automatically run `chown -R`, `xattr -cr`, and `chmod -R 700` on the game folder.
+> Xenolauncher will automatically run `chown -R`, `xattr -cr`, and `chmod -R 700` on the game folder.
 
 ### Example
 ```
-const launch = (gamePath, gameFolder, gameArgs) => { // <-- REQUIRED
+function launch(gamePath, gameFolder, gameArgs) { // <-- REQUIRED
     const { exec } = require('child_process');
     console.log(gameArgs);
     if (gameArgs.runWithRosetta) {

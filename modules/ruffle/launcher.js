@@ -1,4 +1,7 @@
 // Launch adobe flash games (swf) using ruffle
+// Some ruffle cli args just don't work for some reason, probably why ruffle is still in prerelease
+// There is also an issue with an h264 dylib not having the right permissions, so some swfs may not work unless you manually fix that
+// Once again this is apple, making things difficult for no reason
 const launch = (gamePath, gameFolder, gameArgs) => {
     const path = require("path");
     const { exec } = require("child_process");

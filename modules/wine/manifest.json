@@ -7,7 +7,7 @@
     "dependencies": {
         "version/11.0-rc4": {
             "universal": {
-                "link": "https://github.com/Gcenx/macOS_Wine_builds/releases/download/11.0-rc4/wine-devel-11.0-rc4-osx64.tar.xz",
+                "link": "https://github.com/Gcenx/macOS_Wine_builds/releases/download/11.0-rc4/wine-staging-11.0-rc4-osx64.tar.xz",
                 "unzip": true
             }
         }

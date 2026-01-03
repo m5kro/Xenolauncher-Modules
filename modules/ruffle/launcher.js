@@ -5,36 +5,6 @@ const launch = (gamePath, gameFolder, gameArgs) => {
     const fs = require("fs");
     const os = require("os");
 
-    // Ruffle app sits inside a parent folder named after the asset
-    // So need to get the latest asset name to build the path
-    const RELEASE_NAME_FILE_PATH = path.join(
-        os.homedir(),
-        "Library",
-        "Application Support",
-        "xenolauncher",
-        "modules",
-        "ruffle",
-        "deps",
-        "ruffle-release.txt"
-    );
-
-    let releaseName = null;
-    try {
-        releaseName = fs.readFileSync(RELEASE_NAME_FILE_PATH, "utf-8").trim();
-    } catch (err) {
-        console.error(`[ruffle] Failed to read release name from ${RELEASE_NAME_FILE_PATH}: ${err.message}`);
-        // default to known name
-        releaseName = "nightly-2026-01-02";
-    }
-
-    // Convert tag name to asset folder name
-    function buildUniversalAssetName(tagName) {
-        // Tag example: nightly-2026-01-02
-        // File example: ruffle-nightly-2026_01_02-macos-universal.tar.gz
-        const tagForFile = tagName.replace(/(\d{4})-(\d{2})-(\d{2})/, "$1_$2_$3");
-        return `ruffle-${tagForFile}-macos-universal`;
-    }
-
     // Final Ruffle binary path
     const ruffleBinary = path.join(
         os.homedir(),
@@ -44,11 +14,11 @@ const launch = (gamePath, gameFolder, gameArgs) => {
         "modules",
         "ruffle",
         "deps",
-        buildUniversalAssetName(releaseName),
+        "ruffle",
         "Ruffle.app",
         "Contents",
         "MacOS",
-        "Ruffle"
+        "ruffle"
     );
 
     if (!fs.existsSync(ruffleBinary)) {

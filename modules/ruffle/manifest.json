@@ -1,6 +1,6 @@
 {
     "name": "Ruffle",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Launch Flash games using the Ruffle emulator.",
     "author": "m5kro",
     "license": "GPL-3.0",

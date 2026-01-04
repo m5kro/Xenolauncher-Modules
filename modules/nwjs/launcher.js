@@ -338,7 +338,7 @@ function launch(gamePath, gameFolder, gameArgs) {
     }
 
     if (!gameArgs || !gameArgs.version) {
-        gameArgs = { version: "0.101.0" };
+        gameArgs = { version: "0.106.1" };
     }
 
     const nwjsPath = path.join(

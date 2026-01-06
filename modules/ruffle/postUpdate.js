@@ -1,6 +1,7 @@
 async function postUpdate(updatedDeps) {
     const fs = require("fs");
     const path = require("path");
+    const os = require("os");
     const DEPS_DIR = path.join(
         os.homedir(),
         "Library",

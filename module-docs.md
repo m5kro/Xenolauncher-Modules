@@ -30,7 +30,7 @@ Every module must come with a manifest.json file to let the launcher know about 
 ## Not Yet Implemented
 | Name | Type | Description |
 | :------------: | :----------: | :---- |
-| `multi-version` | `type` | Does your module need/support different versions of a compatability layer |
+| `multi-version` | `type` | Does your module need/support different versions of a compatibility layer |
 | `custom-settings` | `boolean` | Use a custom settings page (checks for settings.html) |
 | `custom-setup` | `boolean` | Use a custom setup page (checks for setup.html) |
 
@@ -176,13 +176,13 @@ On the manifest side, the multi version variable will look like a dropdown table
 ```
 
 # launcher.js
-launcher.js is the connector between xenolauncher and the compatability layer being used. It should take in gamePath and gameArgs and apply them to the compatability layer accordingly. It's up to you how it gets done.
+launcher.js is the connector between xenolauncher and the compatibility layer being used. It should take in gamePath and gameArgs and apply them to the compatibility layer accordingly. It's up to you how it gets done.
 
 > [!NOTE]
 > Every module must have a launcher.js with a function named `launch` that takes in gamePath and gameArgs.<br>
 > You must also export the launch function with `exports.launch = launch;`
 
-Taking in the gameFolder variable is optional, it's mostly there for convienience. You can use any default nodejs imports but any others will need to be installed through the dependency system as js files.
+Taking in the gameFolder variable is optional, it's mostly there for convenience. You can use any default nodejs imports but any others will need to be installed through the dependency system as js files.
 
 > [!TIP]
 > Xenolauncher will automatically run `chown -R`, `xattr -cr`, and `chmod -R 700` on the game folder.
@@ -225,7 +225,7 @@ updates.js is used to check for dependency updates. Updates will be applied usin
 ```
 async function checkUpdates() {
     // Update finding logic here
-    // Use web requests or other methods to find the lastest version
+    // Use web requests or other methods to find the latest version
     return {
         "nwjs": {
             x86_64: {
@@ -259,12 +259,12 @@ exports.postUpdate = postUpdate;
 ```
 
 # autodetect
-The autodetect variable is used to determine the best compatability layer for the game. It works by selecting the best match based on the folder and file structure of the game.<br>
+The autodetect variable is used to determine the best compatibility layer for the game. It works by selecting the best match based on the folder and file structure of the game.<br>
 These are the required variables for autodetect:
 | Name | Type | Description |
 | :------------: | :----------: | :---- |
 | `files` | `array` | A file list, supports folders and path traversal |
-| `extensions` | `array` | File extention list, if file names change between games |
+| `extensions` | `array` | File extension list, if file names change between games |
 | `all_required` | `boolean` | If all the files need to be present for the autodetect to succeed<br> If false, the best match will be selected |
 
 ### Example

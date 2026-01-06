@@ -3,21 +3,37 @@ async function checkUpdates() {
     const os = require("os");
     const path = require("path");
 
-    const branch = "dev";
     const timeoutMs = 1000;
 
-    const BUILD_FILE_PATH = path.join(
+    const DEPS_DIR = path.join(
         os.homedir(),
         "Library",
         "Application Support",
         "xenolauncher",
         "modules",
         "easyrpg",
-        "deps",
-        "easyrpg-build.txt"
+        "deps"
     );
 
-    async function getLatestBuild(fallbackBuild) {
+    const CURRENT_BUILD_PATH = path.join(DEPS_DIR, "current-build.txt");
+    const LATEST_BUILD_PATH = path.join(DEPS_DIR, "latest-build.txt");
+
+    async function readTextFileTrim(p) {
+        try {
+            const s = await fs.promises.readFile(p, "utf8");
+            const t = String(s).trim();
+            return t ? t : null;
+        } catch {
+            return null;
+        }
+    }
+
+    async function writeTextFile(p, contents) {
+        await fs.promises.mkdir(path.dirname(p), { recursive: true });
+        await fs.promises.writeFile(p, `${contents}\n`, "utf8");
+    }
+
+    async function getLatestBuildFromCI() {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -40,59 +56,57 @@ async function checkUpdates() {
             const n = data?.builds?.[0]?.number;
             if (n === undefined || n === null) throw new Error("Response missing build number");
 
-            console.info(`[easyrpg] Latest build number: ${n}`);
-            return String(n);
+            const buildStr = String(n);
+            console.info(`[easyrpg] Latest build number: ${buildStr}`);
+            return buildStr;
         } catch (err) {
             console.error(`[easyrpg] Failed to fetch latest build number: ${err.message}`);
-            // On failure, fall back to last known build number (local file)
-            return fallbackBuild ?? null;
+            return null;
         } finally {
             clearTimeout(timer);
         }
     }
 
-    // 1) Check whether BUILD file exists (no early return)
-    let buildFileExists = true;
-    try {
-        await fs.promises.access(BUILD_FILE_PATH, fs.constants.F_OK);
-    } catch {
-        buildFileExists = false;
-        console.info(`[easyrpg] BUILD file not found at "${BUILD_FILE_PATH}". Will create it.`);
+    // Read current/latest from disk (if present)
+    const currentBuild = await readTextFileTrim(CURRENT_BUILD_PATH);
+    const latchedLatestBuild = await readTextFileTrim(LATEST_BUILD_PATH);
+
+    // Try to fetch latest from CI
+    const remoteLatestBuild = await getLatestBuildFromCI();
+
+    // --- Fresh install / missing current ---
+    // If current-build.txt doesn't exist, assume latest installed.
+    // Only initialize if we successfully fetched a build number.
+    if (!currentBuild) {
+        if (!remoteLatestBuild) return;
+
+        await writeTextFile(CURRENT_BUILD_PATH, remoteLatestBuild);
+        await writeTextFile(LATEST_BUILD_PATH, remoteLatestBuild);
+        return; // no update on fresh install
     }
 
-    // 2) Read local BUILD (if file exists)
-    let localBuild = null;
-    if (buildFileExists) {
-        try {
-            localBuild = (await fs.promises.readFile(BUILD_FILE_PATH, "utf8")).trim() || null;
-        } catch (err) {
-            console.warn(`[easyrpg] Failed to read local BUILD file: ${err.message}`);
-            localBuild = null;
+    // --- Normal operation ---
+    // Prefer remote build when available; otherwise fall back to latched latest build.
+    const effectiveLatestBuild = remoteLatestBuild || latchedLatestBuild;
+    if (!effectiveLatestBuild) return;
+
+    // If remote says we're up-to-date, clear any stale latched value by syncing latest -> current.
+    if (remoteLatestBuild && remoteLatestBuild === currentBuild) {
+        if (latchedLatestBuild !== currentBuild) {
+            await writeTextFile(LATEST_BUILD_PATH, currentBuild);
         }
+        return; // no update
     }
 
-    // 3) Fetch latest BUILD from EasyRPG servers (fallback to localBuild on failure)
-    const latestBuild = await getLatestBuild(localBuild);
+    // If effective latest matches current, no update.
+    if (effectiveLatestBuild === currentBuild) return;
 
-    // If we couldn't get anything at all, we can't compare or write
-    if (!latestBuild) return;
-
-    // 4) Compare
-    const matches = !!localBuild && localBuild === latestBuild;
-
-    // 5) Write latest BUILD unless it matches
-    if (!matches) {
-        try {
-            await fs.promises.mkdir(path.dirname(BUILD_FILE_PATH), { recursive: true });
-            await fs.promises.writeFile(BUILD_FILE_PATH, `${latestBuild}\n`, "utf8");
-        } catch (err) {
-            console.warn(`[easyrpg] Failed to write latest BUILD file: ${err.message}`);
-        }
+    // Update available:
+    // Latch latest-build.txt when we successfully fetched a new remote value,
+    // so repeated checks still show an update even if CI fetch fails later.
+    if (remoteLatestBuild && remoteLatestBuild !== latchedLatestBuild) {
+        await writeTextFile(LATEST_BUILD_PATH, remoteLatestBuild);
     }
-
-    // Return update JSON ONLY if there is a real mismatch (localBuild existed and differs)
-    const shouldUpdate = !!localBuild && localBuild !== latestBuild;
-    if (!shouldUpdate) return;
 
     return {
         easyrpg: {
@@ -100,7 +114,7 @@ async function checkUpdates() {
                 link: "https://ci.easyrpg.org/downloads/macos/EasyRPG-Player-macos.app.zip",
                 unzip: true,
             },
-        }
+        },
     };
 }
 

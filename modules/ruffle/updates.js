@@ -5,16 +5,18 @@ async function checkUpdates() {
 
     const timeoutMs = 1000;
 
-    const RELEASE_NAME_FILE_PATH = path.join(
+    const DEPS_DIR = path.join(
         os.homedir(),
         "Library",
         "Application Support",
         "xenolauncher",
         "modules",
         "ruffle",
-        "deps",
-        "ruffle-release.txt"
+        "deps"
     );
+
+    const CURRENT_TAG_PATH = path.join(DEPS_DIR, "current-release.txt");
+    const LATEST_TAG_PATH = path.join(DEPS_DIR, "latest-release.txt");
 
     function buildUniversalAssetName(tagName) {
         // Tag example: nightly-2026-01-02
@@ -23,8 +25,23 @@ async function checkUpdates() {
         return `ruffle-${tagForFile}-macos-universal.tar.gz`;
     }
 
+    async function readTextFileTrim(p) {
+        try {
+            const s = await fs.promises.readFile(p, "utf8");
+            const t = String(s).trim();
+            return t ? t : null;
+        } catch {
+            return null;
+        }
+    }
+
+    async function writeTextFile(p, contents) {
+        await fs.promises.mkdir(path.dirname(p), { recursive: true });
+        await fs.promises.writeFile(p, `${contents}\n`, "utf8");
+    }
+
     // Ruffle is still in prerelease phase, this will eventually need to be changed to releases
-    async function getLatestPrereleaseTag(fallbackTag) {
+    async function getLatestPrereleaseTagFromGitHub() {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -59,60 +76,59 @@ async function checkUpdates() {
             return tagName;
         } catch (err) {
             console.error(`[ruffle] Failed to fetch latest prerelease tag: ${err.message}`);
-            // On failure, fall back to last known tag (local file)
-            return fallbackTag ?? null;
+            return null;
         } finally {
             clearTimeout(timer);
         }
     }
 
-    // 1) Check whether release file exists (no early return)
-    let releaseFileExists = true;
-    try {
-        await fs.promises.access(RELEASE_NAME_FILE_PATH, fs.constants.F_OK);
-    } catch {
-        releaseFileExists = false;
-        console.info(
-            `[ruffle] Release file not found at "${RELEASE_NAME_FILE_PATH}". Will create it.`
-        );
+    // Read current/latest from disk (if present)
+    const currentTag = await readTextFileTrim(CURRENT_TAG_PATH);
+    const latchedLatestTag = await readTextFileTrim(LATEST_TAG_PATH);
+
+    // Try to fetch latest from GitHub
+    const remoteLatestTag = await getLatestPrereleaseTagFromGitHub();
+
+    // --- Fresh install / missing current ---
+    // If current-release.txt doesn't exist, assume latest installed.
+    // Only initialize if we successfully fetched a tag.
+    if (!currentTag) {
+        if (!remoteLatestTag) return;
+
+        await writeTextFile(CURRENT_TAG_PATH, remoteLatestTag);
+        await writeTextFile(LATEST_TAG_PATH, remoteLatestTag);
+        return; // no update on fresh install
     }
 
-    // 2) Read local release tag (if file exists)
-    let localTag = null;
-    if (releaseFileExists) {
-        try {
-            localTag = (await fs.promises.readFile(RELEASE_NAME_FILE_PATH, "utf8")).trim() || null;
-        } catch (err) {
-            console.warn(`[ruffle] Failed to read local release file: ${err.message}`);
-            localTag = null;
+    // --- Normal operation ---
+    // Prefer remote tag when available; otherwise fall back to latched latest tag.
+    const effectiveLatestTag = remoteLatestTag || latchedLatestTag;
+    if (!effectiveLatestTag) return;
+
+    // If remote says we're up-to-date, clear any stale latched value by syncing latest -> current.
+    if (remoteLatestTag && remoteLatestTag === currentTag) {
+        if (latchedLatestTag !== currentTag) {
+            await writeTextFile(LATEST_TAG_PATH, currentTag);
         }
+        return; // no update
     }
 
-    // 3) Fetch latest prerelease tag from GitHub (fallback to localTag on failure)
-    const latestTag = await getLatestPrereleaseTag(localTag);
+    // If effective latest matches current, no update.
+    if (effectiveLatestTag === currentTag) return;
 
-    // If we couldn't get anything at all, we can't compare or write
-    if (!latestTag) return;
-
-    // 4) Compare
-    const matches = !!localTag && localTag === latestTag;
-
-    // 5) Write latest tag unless it matches
-    if (!matches) {
-        try {
-            await fs.promises.mkdir(path.dirname(RELEASE_NAME_FILE_PATH), { recursive: true });
-            await fs.promises.writeFile(RELEASE_NAME_FILE_PATH, `${latestTag}\n`, "utf8");
-        } catch (err) {
-            console.warn(`[ruffle] Failed to write latest release file: ${err.message}`);
-        }
+    // Update available:
+    // Latch latest-release.txt when we successfully fetched a new remote value,
+    // so repeated checks still show an update even if GitHub fetch fails later.
+    if (remoteLatestTag && remoteLatestTag !== latchedLatestTag) {
+        await writeTextFile(LATEST_TAG_PATH, remoteLatestTag);
     }
 
-    // Return update JSON ONLY if there is a real mismatch (localTag existed and differs)
-    const shouldUpdate = !!localTag && localTag !== latestTag;
-    if (!shouldUpdate) return;
+    // Build download link using the *effective* latest tag
+    const tagForDownload = remoteLatestTag || latchedLatestTag;
+    if (!tagForDownload) return;
 
-    const assetName = buildUniversalAssetName(latestTag);
-    const link = `https://github.com/ruffle-rs/ruffle/releases/download/${latestTag}/${assetName}`;
+    const assetName = buildUniversalAssetName(tagForDownload);
+    const link = `https://github.com/ruffle-rs/ruffle/releases/download/${tagForDownload}/${assetName}`;
 
     return {
         dependencies: {

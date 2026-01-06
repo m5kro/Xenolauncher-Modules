@@ -6,18 +6,35 @@ async function checkUpdates() {
     const branch = "dev";
     const timeoutMs = 1000;
 
-    const SHA_FILE_PATH = path.join(
+    const DEPS_DIR = path.join(
         os.homedir(),
         "Library",
         "Application Support",
         "xenolauncher",
         "modules",
         "mkxpz",
-        "deps",
-        "mkxpz-sha.txt"
+        "deps"
     );
 
-    async function getLatestSha(fallbackSha) {
+    const CURRENT_SHA_PATH = path.join(DEPS_DIR, "current-sha.txt");
+    const LATEST_SHA_PATH = path.join(DEPS_DIR, "latest-sha.txt");
+
+    async function readTextFileTrim(p) {
+        try {
+            const s = await fs.promises.readFile(p, "utf8");
+            const t = String(s).trim();
+            return t ? t : null;
+        } catch {
+            return null;
+        }
+    }
+
+    async function writeTextFile(p, contents) {
+        await fs.promises.mkdir(path.dirname(p), { recursive: true });
+        await fs.promises.writeFile(p, `${contents}\n`, "utf8");
+    }
+
+    async function getLatestShaFromGitHub() {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -45,55 +62,55 @@ async function checkUpdates() {
             return data.sha;
         } catch (err) {
             console.error(`[mkxpz] Failed to fetch latest commit SHA: ${err.message}`);
-            // On failure, fall back to last known SHA (local file)
-            return fallbackSha ?? null;
+            return null;
         } finally {
             clearTimeout(timer);
         }
     }
 
-    // 1) Check whether SHA file exists (no early return)
-    let shaFileExists = true;
-    try {
-        await fs.promises.access(SHA_FILE_PATH, fs.constants.F_OK);
-    } catch {
-        shaFileExists = false;
-        console.info(`[mkxpz] SHA file not found at "${SHA_FILE_PATH}". Will create it.`);
+    // Read current/latest from disk (if present)
+    const currentSha = await readTextFileTrim(CURRENT_SHA_PATH);
+    const latchedLatestSha = await readTextFileTrim(LATEST_SHA_PATH);
+
+    // Try to fetch latest from GitHub
+    const remoteLatestSha = await getLatestShaFromGitHub();
+
+    // --- Fresh install / missing current ---
+    // If current-sha.txt doesn't exist (or is empty), assume "latest installed".
+    // Only do this if we successfully fetched a SHA (otherwise we can't safely initialize).
+    if (!currentSha) {
+        if (!remoteLatestSha) return;
+
+        // Initialize both to the same value
+        await writeTextFile(CURRENT_SHA_PATH, remoteLatestSha);
+        await writeTextFile(LATEST_SHA_PATH, remoteLatestSha);
+        return; // no update on fresh install
     }
 
-    // 2) Read local SHA (if file exists)
-    let localSha = null;
-    if (shaFileExists) {
-        try {
-            localSha = (await fs.promises.readFile(SHA_FILE_PATH, "utf8")).trim() || null;
-        } catch (err) {
-            console.warn(`[mkxpz] Failed to read local SHA file: ${err.message}`);
-            localSha = null;
+    // --- Normal operation ---
+    // Prefer remote SHA when available; otherwise fall back to latched latest SHA.
+    const effectiveLatestSha = remoteLatestSha || latchedLatestSha;
+    if (!effectiveLatestSha) return; // nothing to compare
+
+    // If remote says we're up-to-date, clear any stale "latched update" by syncing latest -> current.
+    if (remoteLatestSha && remoteLatestSha === currentSha) {
+        if (latchedLatestSha !== currentSha) {
+            await writeTextFile(LATEST_SHA_PATH, currentSha);
         }
+        return; // no update
     }
 
-    // 3) Fetch latest SHA from GitHub (fallback to localSha on failure)
-    const latestSha = await getLatestSha(localSha);
-
-    // If we couldn't get anything at all, we can't compare or write
-    if (!latestSha) return;
-
-    // 4) Compare
-    const matches = !!localSha && localSha === latestSha;
-
-    // 5) Write latest SHA unless it matches
-    if (!matches) {
-        try {
-            await fs.promises.mkdir(path.dirname(SHA_FILE_PATH), { recursive: true });
-            await fs.promises.writeFile(SHA_FILE_PATH, `${latestSha}\n`, "utf8");
-        } catch (err) {
-            console.warn(`[mkxpz] Failed to write latest SHA file: ${err.message}`);
-        }
+    // If effective latest matches current, no update.
+    if (effectiveLatestSha === currentSha) {
+        return;
     }
 
-    // Return update JSON ONLY if there is a real mismatch (localSha existed and differs)
-    const shouldUpdate = !!localSha && localSha !== latestSha;
-    if (!shouldUpdate) return;
+    // Update available:
+    // Latch the latest SHA (only overwrite if we actually got a remote SHA).
+    // This ensures repeated checks still show an update even if GitHub fetch fails later.
+    if (remoteLatestSha && remoteLatestSha !== latchedLatestSha) {
+        await writeTextFile(LATEST_SHA_PATH, remoteLatestSha);
+    }
 
     return {
         mkxpz: {
@@ -101,7 +118,7 @@ async function checkUpdates() {
                 link: "https://github.com/m5kro/mkxp-z/releases/download/launcher/Z-universal.zip",
                 unzip: true,
             },
-        }
+        },
     };
 }
 

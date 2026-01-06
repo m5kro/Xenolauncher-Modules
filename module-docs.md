@@ -242,6 +242,22 @@ async function checkUpdates() {
 exports.checkUpdates = checkUpdates;
 ```
 
+# postupdate.js
+postupdate.js only runs after a successful dependency update.
+
+> [!NOTE]
+> Every postupdate.js must have an **async** `postUpdate` function.<br>
+> You must also export the postUpdate function with `exports.postUpdate = postUpdate;`
+
+### Example
+```
+async function postUpdate(updatedDeps) {
+    // Postupdate code here
+    // Can be for updating files or linking dependencies etc
+}
+exports.postUpdate = postUpdate;
+```
+
 # autodetect
 The autodetect variable is used to determine the best compatability layer for the game. It works by selecting the best match based on the folder and file structure of the game.<br>
 These are the required variables for autodetect:

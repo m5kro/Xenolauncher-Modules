@@ -131,12 +131,10 @@ async function checkUpdates() {
     const link = `https://github.com/ruffle-rs/ruffle/releases/download/${tagForDownload}/${assetName}`;
 
     return {
-        dependencies: {
-            ruffle: {
-                universal: {
-                    link,
-                    unzip: true,
-                },
+        ruffle: {
+            universal: {
+                link,
+                unzip: true,
             },
         },
     };

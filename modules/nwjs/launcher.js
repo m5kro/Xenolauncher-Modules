@@ -113,9 +113,19 @@ function launch(gamePath, gameFolder, gameArgs) {
             return false;
         }
 
-        const newInner = `    "${url}",\n${inner}`;
-        const replacedMatch = m[0].replace(inner, newInner);
+        // Insert after rmmz_managers.js
+        const managersRe = /([ \t]*)"js\/rmmz_managers\.js",(\r?\n)/;
+        const newInner = inner.replace(managersRe, (_full, indent, newline) => {
+            return `${_full}${indent}"${url}",${newline}`;
+        });
 
+        if (newInner === inner) {
+            // rmmz_managers.js not found in scriptUrls array
+            console.warn("rmmz_managers.js not found in scriptUrls; cannot insert Cheat_Menu.js");
+            return false;
+        }
+
+        const replacedMatch = m[0].replace(inner, newInner);
         const newContent = content.slice(0, m.index) + replacedMatch + content.slice(m.index + m[0].length);
 
         try {
@@ -127,7 +137,6 @@ function launch(gamePath, gameFolder, gameArgs) {
     }
 
     function unmodifyMZMainJs(filePath) {
-        if (!fs.existsExists && fs.existsSync) {}
         if (!fs.existsSync(filePath)) return false;
 
         let content = fs.readFileSync(filePath, "utf-8");
@@ -388,5 +397,5 @@ function launch(gamePath, gameFolder, gameArgs) {
         }
         console.log(stdout);
     });
-};
+}
 exports.launch = launch;

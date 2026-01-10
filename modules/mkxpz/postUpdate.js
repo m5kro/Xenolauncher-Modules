@@ -27,3 +27,4 @@ async function postUpdate (updatedDeps) {
         console.warn("[mkxpz] postupdate failed:", e);
     }
 };
+exports.postUpdate = postUpdate;

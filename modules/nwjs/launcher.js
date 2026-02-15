@@ -429,12 +429,7 @@ function launch(gamePath, gameFolder, gameArgs) {
             const changedField = ensureChromiumArgsField(pkg);
             const changedDevtools = removeChromiumArg(pkg, "--disable-devtools", { allowValue: true });
 
-            const shouldDisableEncryption = !(gameArgs && gameArgs.disableEncryption === false);
-            const changedEncryption = shouldDisableEncryption
-                ? addChromiumArg(pkg, "--disable-encryption")
-                : removeChromiumArg(pkg, "--disable-encryption");
-
-            if (!existed || changedField || changedDevtools || changedEncryption) writePackageJson(packageJsonPath, pkg);
+            if (!existed || changedField || changedDevtools ) writePackageJson(packageJsonPath, pkg);
         }
     } catch (e) {
         console.error("Failed to sanitize chromium-args:", e);

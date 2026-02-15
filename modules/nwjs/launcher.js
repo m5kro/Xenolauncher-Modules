@@ -218,34 +218,58 @@ function launch(gamePath, gameFolder, gameArgs) {
         fs.writeFileSync(pkgPath, JSON.stringify(pkgObj, null, 4), "utf-8");
     }
 
-    // Remove '--disable-devtools' from chromium-args
-    function stripDisableDevtoolsFromChromiumArgs(pkgPath) {
-        if (!fs.existsSync(pkgPath)) return false;
-        try {
-            const raw = fs.readFileSync(pkgPath, "utf-8");
-            const pkg = JSON.parse(raw);
-            const args = pkg["chromium-args"];
+    function escapeRegExp(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
 
-            if (typeof args === "string" && args.includes("--disable-devtools")) {
-                // Remove flag
-                let updated = args
-                    .replace(/(^|\s)--disable-devtools(?:=\S+)?(?=\s|$)/g, " ")
-                    .replace(/\s+/g, " ")
-                    .trim();
+    function addChromiumArg(pkg, flag) {
+        const cur = pkg["chromium-args"];
+        let args = "";
 
-                if (updated.length > 0) {
-                    pkg["chromium-args"] = updated;
-                } else {
-                    delete pkg["chromium-args"];
-                }
-
-                writePackageJson(pkgPath, pkg);
-                return true;
-            }
-        } catch (e) {
-            // ignore malformed package.json
+        if (typeof cur === "string") {
+            args = cur;
+        } else if (Array.isArray(cur)) {
+            args = cur.join(" ");
+        } else if (cur != null) {
+            args = String(cur);
         }
+
+        const re = new RegExp(`(^|\\s)${escapeRegExp(flag)}(?=\\s|$)`);
+        if (!re.test(args)) {
+            const next = (args || "").trim();
+            pkg["chromium-args"] = next ? `${next} ${flag}` : flag;
+            return true;
+        }
+
         return false;
+    }
+
+    function removeChromiumArg(pkg, flag, opts = {}) {
+        const { allowValue = false } = opts;
+        const cur = pkg["chromium-args"];
+        let args = "";
+
+        if (typeof cur === "string") {
+            args = cur;
+        } else if (Array.isArray(cur)) {
+            args = cur.join(" ");
+        } else if (cur != null) {
+            args = String(cur);
+        }
+
+        if (!args) return false;
+
+        const flagPattern = allowValue
+            ? `${escapeRegExp(flag)}(?:=\\S+)?`
+            : `${escapeRegExp(flag)}`;
+        const re = new RegExp(`(^|\\s)${flagPattern}(?=\\s|$)`, "g");
+        const updated = args.replace(re, " ").replace(/\\s+/g, " ").trim();
+
+        if (updated === (args || "").trim()) return false;
+
+        if (updated) pkg["chromium-args"] = updated;
+        else delete pkg["chromium-args"];
+        return true;
     }
 
     function applyProtection(folderPath) {
@@ -254,15 +278,6 @@ function launch(gamePath, gameFolder, gameArgs) {
 
         // Set bg-script = 'bg.js'
         pkg["bg-script"] = "bg.js";
-
-        // Also ensure devtools aren't disabled
-        if (typeof pkg["chromium-args"] === "string" && pkg["chromium-args"].includes("--disable-devtools")) {
-            pkg["chromium-args"] = pkg["chromium-args"]
-                .replace(/(^|\s)--disable-devtools(?:=\S+)?(?=\s|$)/g, " ")
-                .replace(/\s+/g, " ")
-                .trim();
-            if (!pkg["chromium-args"]) delete pkg["chromium-args"];
-        }
 
         writePackageJson(pkgPath, pkg);
 
@@ -383,8 +398,21 @@ function launch(gamePath, gameFolder, gameArgs) {
     }
 
     // Ensure devtools aren't disabled via chromium-args
+    // Optionally disable encryption to avoid Safe Storage popup
     try {
-        stripDisableDevtoolsFromChromiumArgs(packageJsonPath);
+        if (fs.existsSync(packageJsonPath)) {
+            const raw = fs.readFileSync(packageJsonPath, "utf-8");
+            const pkg = JSON.parse(raw);
+
+            const changedDevtools = removeChromiumArg(pkg, "--disable-devtools", { allowValue: true });
+
+            const shouldDisableEncryption = !(gameArgs && gameArgs.disableEncryption === false);
+            const changedEncryption = shouldDisableEncryption
+                ? addChromiumArg(pkg, "--disable-encryption")
+                : removeChromiumArg(pkg, "--disable-encryption");
+
+            if (changedDevtools || changedEncryption) writePackageJson(packageJsonPath, pkg);
+        }
     } catch (e) {
         console.error("Failed to sanitize chromium-args:", e);
     }

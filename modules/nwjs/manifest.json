@@ -1,6 +1,6 @@
 {
     "name": "NW.js",
-    "version": "1.4.0",
+    "version": "1.4.1",
     "description": "A module to launch NW.js native games like RPG Maker MV and MZ.",
     "author": "m5kro",
     "license": "GPL-3.0",

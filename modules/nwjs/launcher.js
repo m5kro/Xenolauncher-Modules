@@ -244,6 +244,14 @@ function launch(gamePath, gameFolder, gameArgs) {
         return false;
     }
 
+    function ensureChromiumArgsField(pkg) {
+        if (!("chromium-args" in pkg)) {
+            pkg["chromium-args"] = "";
+            return true;
+        }
+        return false;
+    }
+
     function removeChromiumArg(pkg, flag, opts = {}) {
         const { allowValue = false } = opts;
         const cur = pkg["chromium-args"];
@@ -267,8 +275,7 @@ function launch(gamePath, gameFolder, gameArgs) {
 
         if (updated === (args || "").trim()) return false;
 
-        if (updated) pkg["chromium-args"] = updated;
-        else delete pkg["chromium-args"];
+        pkg["chromium-args"] = updated;
         return true;
     }
 
@@ -278,6 +285,10 @@ function launch(gamePath, gameFolder, gameArgs) {
 
         // Set bg-script = 'bg.js'
         pkg["bg-script"] = "bg.js";
+
+        // Ensure devtools aren't disabled via chromium-args
+        ensureChromiumArgsField(pkg);
+        removeChromiumArg(pkg, "--disable-devtools", { allowValue: true });
 
         writePackageJson(pkgPath, pkg);
 
@@ -404,6 +415,8 @@ function launch(gamePath, gameFolder, gameArgs) {
             const raw = fs.readFileSync(packageJsonPath, "utf-8");
             const pkg = JSON.parse(raw);
 
+            const changedField = ensureChromiumArgsField(pkg);
+
             const changedDevtools = removeChromiumArg(pkg, "--disable-devtools", { allowValue: true });
 
             const shouldDisableEncryption = !(gameArgs && gameArgs.disableEncryption === false);
@@ -411,7 +424,7 @@ function launch(gamePath, gameFolder, gameArgs) {
                 ? addChromiumArg(pkg, "--disable-encryption")
                 : removeChromiumArg(pkg, "--disable-encryption");
 
-            if (changedDevtools || changedEncryption) writePackageJson(packageJsonPath, pkg);
+            if (changedField || changedDevtools || changedEncryption) writePackageJson(packageJsonPath, pkg);
         }
     } catch (e) {
         console.error("Failed to sanitize chromium-args:", e);

@@ -46,7 +46,7 @@ All dependencies will end up in a subfolder called deps in your module folder. E
 | `name` | `array` | subfolder name inside deps and what links to use (see example) |
 | `arch` | `array` | can be `x86_64`, `arm64`, or `universal` (see example) <br> launcher will auto choose based on the system (universal is preffered) |
 | `link` | `string` | link to download from |
-| `unzip` | `boolean` | if the file needs to be unzipped |
+| `unzip` | `boolean` | if the file needs to be unzipped (supports zip, tar, gz, and xz) |
 ### Example
 `//` below means comment.
 ```

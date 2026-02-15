@@ -245,7 +245,7 @@ function launch(gamePath, gameFolder, gameArgs) {
     }
 
     function ensureChromiumArgsField(pkg) {
-        if (!("chromium-args" in pkg)) {
+        if (!("chromium-args" in pkg) || pkg["chromium-args"] == null) {
             pkg["chromium-args"] = "";
             return true;
         }
@@ -411,12 +411,22 @@ function launch(gamePath, gameFolder, gameArgs) {
     // Ensure devtools aren't disabled via chromium-args
     // Optionally disable encryption to avoid Safe Storage popup
     try {
-        if (fs.existsSync(packageJsonPath)) {
-            const raw = fs.readFileSync(packageJsonPath, "utf-8");
-            const pkg = JSON.parse(raw);
+        const existed = fs.existsSync(packageJsonPath);
+        let pkg;
 
+        if (existed) {
+            try {
+                pkg = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
+            } catch {
+                // Don't overwrite an unreadable package.json
+                pkg = null;
+            }
+        } else {
+            pkg = readOrInitPackageJson(packageJsonPath);
+        }
+
+        if (pkg) {
             const changedField = ensureChromiumArgsField(pkg);
-
             const changedDevtools = removeChromiumArg(pkg, "--disable-devtools", { allowValue: true });
 
             const shouldDisableEncryption = !(gameArgs && gameArgs.disableEncryption === false);
@@ -424,7 +434,7 @@ function launch(gamePath, gameFolder, gameArgs) {
                 ? addChromiumArg(pkg, "--disable-encryption")
                 : removeChromiumArg(pkg, "--disable-encryption");
 
-            if (changedField || changedDevtools || changedEncryption) writePackageJson(packageJsonPath, pkg);
+            if (!existed || changedField || changedDevtools || changedEncryption) writePackageJson(packageJsonPath, pkg);
         }
     } catch (e) {
         console.error("Failed to sanitize chromium-args:", e);

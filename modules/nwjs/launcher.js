@@ -348,6 +348,102 @@ function launch(gamePath, gameFolder, gameArgs) {
         }
     }
 
+    // Pixel Patch helpers
+    function patchRpgmGetPixel(gameRoot, enable) {
+        const PATCH_BEGIN = "/* RPGM-Launcher getPixel finite patch begin */";
+        const PATCH_END = "/* RPGM-Launcher getPixel finite patch end */";
+
+        if (!gameRoot) return false;
+
+        // If a file path was provided, patch relative to its directory
+        try {
+            if (fs.existsSync(gameRoot) && fs.lstatSync(gameRoot).isFile()) {
+                gameRoot = path.dirname(gameRoot);
+            }
+        } catch {
+            // ignore
+        }
+
+        function isDir(p) {
+            try {
+                return fs.existsSync(p) && fs.lstatSync(p).isDirectory();
+            } catch {
+                return false;
+            }
+        }
+
+        const jsFolder =
+            (isDir(path.join(gameRoot, "js")) && path.join(gameRoot, "js")) ||
+            (isDir(path.join(gameRoot, "www", "js")) && path.join(gameRoot, "www", "js"));
+
+        if (!jsFolder) return false;
+
+        const corePath =
+            (fs.existsSync(path.join(jsFolder, "rmmz_core.js")) && path.join(jsFolder, "rmmz_core.js")) ||
+            (fs.existsSync(path.join(jsFolder, "rpg_core.js")) && path.join(jsFolder, "rpg_core.js"));
+
+        if (!corePath) return false;
+
+        let content;
+        try {
+            content = fs.readFileSync(corePath, "utf-8");
+        } catch {
+            return false;
+        }
+
+        const newline = content.includes("\r\n") ? "\r\n" : "\n";
+        const alreadyPatched = content.includes(PATCH_BEGIN) && content.includes(PATCH_END);
+
+        // Remove patch if disabled
+        if (!enable) {
+            if (!alreadyPatched) return false;
+            const blockRe = /[ \t]*\/\*\s*RPGM-Launcher getPixel finite patch begin\s*\*\/[\s\S]*?[ \t]*\/\*\s*RPGM-Launcher getPixel finite patch end\s*\*\/\s*\r?\n?/g;
+            const updated = content.replace(blockRe, "");
+            if (updated === content) return false;
+            try {
+                fs.writeFileSync(corePath, updated, "utf-8");
+            } catch {
+                return false;
+            }
+            return true;
+        }
+
+        // Apply patch if enabled
+        if (alreadyPatched) return false;
+
+        const headerRe = /^([ \t]*)Bitmap\.prototype\.getPixel\s*=\s*function\s*\(\s*x\s*,\s*y\s*\)\s*\{\s*$/m;
+        const m = content.match(headerRe);
+        if (!m) return false;
+
+        const indent = m[1] || "";
+        const patchBlock =
+            `${indent}    ${PATCH_BEGIN}${newline}` +
+            `${indent}    if (!Number.isFinite(x) || !Number.isFinite(y)) {${newline}` +
+            `${indent}        return '#000000';${newline}` +
+            `${indent}    }${newline}` +
+            `${indent}    ${PATCH_END}${newline}`;
+
+        const updated = content.replace(headerRe, (full) => full + newline + patchBlock);
+
+        if (updated === content) return false;
+
+        try {
+            fs.writeFileSync(corePath, updated, "utf-8");
+        } catch {
+            return false;
+        }
+        return true;
+    }
+
+    // Apply/remove getPixel finite patch (default: enabled)
+    try {
+        const enablePixelPatch = gameArgs ? gameArgs.applyPixelPatch !== false : true;
+        patchRpgmGetPixel(gameFolder, enablePixelPatch);
+    } catch (e) {
+        // Non-RPGMaker games may fail here, which is fine
+        console.error("getPixel patching error:", e);
+    }
+
     // Apply or remove Cheat Menu
     try {
         if (gameArgs && gameArgs.cheat) {

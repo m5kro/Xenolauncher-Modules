@@ -1,6 +1,6 @@
 {
     "name": "NW.js",
-    "version": "1.4.3",
+    "version": "1.4.4",
     "description": "A module to launch NW.js native games like RPG Maker MV and MZ.",
     "author": "m5kro",
     "license": "GPL-3.0",
@@ -65,6 +65,11 @@
             "type": "boolean",
             "label": "Allow file execution and network access (Not recommended)",
             "default": false
+        },
+        "applyPixelPatch": {
+            "type": "boolean",
+            "label": "Apply getPixel patch (Fixes NaN/Infinity bug in some games)",
+            "default": true
         }
     }
 }

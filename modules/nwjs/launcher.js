@@ -1,7 +1,7 @@
 // Launches the game using NW.js
 // Unfortunately, the NW.js instance being used by Xenolauncher doesn't work due to session conflicts :(
 // Requires at least one NW.js version to be installed + permission fixes that are applied during the installation process
-function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
+function launch(gamePath, gameFolder, gameArgs, gameName="game", ui) {
     const path = require("path");
     const { exec } = require("child_process");
     const fs = require("fs");

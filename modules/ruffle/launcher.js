@@ -2,7 +2,7 @@
 // Some ruffle cli args just don't work for some reason, probably why ruffle is still in prerelease
 // There is also an issue with an h264 dylib not having the right permissions, so some swfs may not work unless you manually fix that
 // Once again this is apple, making things difficult for no reason
-function launch(gamePath, gameFolder, gameArgs) {
+function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
     const path = require("path");
     const { exec } = require("child_process");
     const fs = require("fs");

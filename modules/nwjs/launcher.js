@@ -1,7 +1,7 @@
 // Launches the game using NW.js
 // Unfortunately, the NW.js instance being used by Xenolauncher doesn't work due to session conflicts :(
 // Requires at least one NW.js version to be installed + permission fixes that are applied during the installation process
-function launch(gamePath, gameFolder, gameArgs) {
+function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
     const path = require("path");
     const { exec } = require("child_process");
     const fs = require("fs");
@@ -491,7 +491,6 @@ function launch(gamePath, gameFolder, gameArgs) {
 
     // Check package.json in the game directory for a name; if there isn't one then give it one
     const packageJsonPath = path.join(gameFolder, "package.json");
-    let gameName = "Game";
     if (fs.existsSync(packageJsonPath)) {
         try {
             const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));

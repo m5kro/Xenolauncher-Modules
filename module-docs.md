@@ -175,21 +175,30 @@ On the manifest side, the multi version variable will look like a dropdown table
 }
 ```
 
+# UI
+In the following sections, all functions will take in the ui variable. ui is used to communicate with the main launcher ui.<br>
+<br>
+Available Functions<br>
+| Name | Example | Description |
+| ----- | ----- | ------------------- |
+| `alert` | `await ui.alert('Error, patch failed', "Error");` | Sends an alert popup. |
+| `confirm` | `const ok = await ui.confirm('Are you sure?', "confirm");` | Sends a confirm popup with yes or no. Returns true or false. |
+
 # launcher.js
 launcher.js is the connector between xenolauncher and the compatibility layer being used. It should take in gamePath and gameArgs and apply them to the compatibility layer accordingly. It's up to you how it gets done.
 
 > [!NOTE]
-> Every module must have a launcher.js with a function named `launch` that takes in gamePath and gameArgs.<br>
+> Every module must have a launcher.js with a function named `launch` that takes in gamePath, gameFolder, gameArgs, gameName, and ui.<br>
 > You must also export the launch function with `exports.launch = launch;`
 
-Taking in the gameFolder variable is optional, it's mostly there for convenience. You can use any default nodejs imports but any others will need to be installed through the dependency system as js files.
+Taking in the gameFolder and gameName variables is optional, it's mostly there for convenience. You can use any default nodejs imports but any others will need to be installed through the dependency system as js files.
 
 > [!TIP]
 > Xenolauncher will automatically run `chown -R`, `xattr -cr`, and `chmod -R 700` on the game folder.
 
 ### Example
 ```
-function launch(gamePath, gameFolder, gameArgs) { // <-- REQUIRED
+function launch(gamePath, gameFolder, gameArgs, gameName, ui) { // <-- REQUIRED
     const { exec } = require('child_process');
     console.log(gameArgs);
     if (gameArgs.runWithRosetta) {
@@ -223,7 +232,7 @@ updates.js is used to check for dependency updates. Updates will be applied usin
 
 ### Example
 ```
-async function checkUpdates() {
+async function checkUpdates(ui) {
     // Update finding logic here
     // Use web requests or other methods to find the latest version
     return {
@@ -251,11 +260,27 @@ postupdate.js only runs after a successful dependency update.
 
 ### Example
 ```
-async function postUpdate(updatedDeps) {
-    // Postupdate code here
+async function postUpdate(updatedDeps, ui) {
+    // postUpdate code here
     // Can be for updating files or linking dependencies etc
 }
 exports.postUpdate = postUpdate;
+```
+
+# postdelete.js
+postdelete.js only runs after deleting a game.
+
+> [!NOTE]
+> Every postdelete.js must have an **async** `postDelete` function.<br>
+> You must also export the postDelete function with `exports.postDelete = postDelete;`
+
+### Example
+```
+async function postDelete(gameName, gameFolder, gamePath, ui) {
+    // postDelete code here
+    // Clear cache file and other stuff
+}
+exports.postDelete = postDelete;
 ```
 
 # autodetect

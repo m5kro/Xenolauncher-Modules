@@ -12,6 +12,11 @@
             }
         }
     },
+    "autodetect": {
+        "extensions": ["py", "exe", "sh"],
+        "files": ["renpy"],
+        "all_required": true
+    },
     "updates": true,
     "gameArgs": {
         "savedir": {

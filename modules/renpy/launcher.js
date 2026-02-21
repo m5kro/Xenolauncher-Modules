@@ -55,7 +55,7 @@ function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
     const command = gameArgs && typeof gameArgs.command === "string" ? gameArgs.command : "";
 
     const quote = (value) => `"${String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
-    const launchCommand = `${quote(renpyPath)} --savedir ${quote(savedir)} ${quote(gameFolder)} ${quote(command)}`;
+    const launchCommand = `${quote(renpyPath)} --savedir ${quote(savedir)} ${quote(gameFolder)}${command ? ` ${quote(command)}` : ""}`;
 
     exec(launchCommand, (err, stdout, stderr) => {
         if (err) {

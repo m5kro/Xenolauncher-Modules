@@ -1,4 +1,5 @@
 async function checkUpdates() {
+    const fs = require("fs");
     const os = require("os");
     const path = require("path");
     const { exec } = require("child_process");
@@ -23,7 +24,7 @@ async function checkUpdates() {
     }
 
     function getInstalledVersion() {
-        const renpyPath = path.join(
+        const renpyDepsPath = path.join(
             os.homedir(),
             "Library",
             "Application Support",
@@ -31,9 +32,36 @@ async function checkUpdates() {
             "modules",
             "renpy",
             "deps",
-            "renpy",
-            "renpy.sh"
+            "renpy"
         );
+
+        // Renpy has the version number in the unzipped folder name
+        function resolveRenpyPath() {
+            const directPath = path.join(renpyDepsPath, "renpy.sh");
+            if (fs.existsSync(directPath)) return directPath;
+
+            try {
+                const subfolders = fs
+                    .readdirSync(renpyDepsPath, { withFileTypes: true })
+                    .filter((entry) => entry.isDirectory() && /^renpy-\d+\.\d+\.\d+-sdk$/.test(entry.name))
+                    .map((entry) => entry.name)
+                    .sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+
+                for (const folder of subfolders) {
+                    const candidate = path.join(renpyDepsPath, folder, "renpy.sh");
+                    if (fs.existsSync(candidate)) return candidate;
+                }
+            } catch {
+                return null;
+            }
+
+            return null;
+        }
+
+        const renpyPath = resolveRenpyPath();
+        if (!renpyPath) {
+            return Promise.resolve(null);
+        }
 
         return new Promise((resolve) => {
             exec(`"${renpyPath}" --version`, { timeout: timeoutMs }, (err, stdout, stderr) => {

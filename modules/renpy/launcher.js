@@ -1,9 +1,10 @@
 function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
+    const fs = require("fs");
     const path = require("path");
     const os = require("os");
     const { exec } = require("child_process");
 
-    const renpyPath = path.join(
+    const renpyDepsPath = path.join(
         os.homedir(),
         "Library",
         "Application Support",
@@ -11,9 +12,37 @@ function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
         "modules",
         "renpy",
         "deps",
-        "renpy",
-        "renpy.sh"
+        "renpy"
     );
+
+    // Renpy has the version number in the unzipped folder name
+    function resolveRenpyPath() {
+        const directPath = path.join(renpyDepsPath, "renpy.sh");
+        if (fs.existsSync(directPath)) return directPath;
+
+        try {
+            const subfolders = fs
+                .readdirSync(renpyDepsPath, { withFileTypes: true })
+                .filter((entry) => entry.isDirectory() && /^renpy-\d+\.\d+\.\d+-sdk$/.test(entry.name))
+                .map((entry) => entry.name)
+                .sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+
+            for (const folder of subfolders) {
+                const candidate = path.join(renpyDepsPath, folder, "renpy.sh");
+                if (fs.existsSync(candidate)) return candidate;
+            }
+        } catch {
+            return null;
+        }
+
+        return null;
+    }
+
+    const renpyPath = resolveRenpyPath();
+    if (!renpyPath) {
+        console.error("Unable to locate renpy.sh in Ren'Py dependency folder.");
+        return;
+    }
 
     const baseSaveDir = gameArgs && typeof gameArgs.savedir === "string" && gameArgs.savedir.trim()
         ? gameArgs.savedir

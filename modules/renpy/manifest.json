@@ -1,0 +1,33 @@
+{
+    "name": "RenPy",
+    "version": "1.0.2",
+    "description": "A module to launch Ren'Py games.",
+    "author": "m5kro",
+    "license": "GPL-3.0",
+    "dependencies": {
+        "renpy": {
+            "universal": {
+                "link": "https://www.renpy.org/dl/8.5.2/renpy-8.5.2-sdk.zip",
+                "unzip": true
+            }
+        }
+    },
+    "autodetect": {
+        "extensions": ["py", "exe", "sh"],
+        "files": ["renpy"],
+        "all_required": true
+    },
+    "updates": true,
+    "gameArgs": {
+        "savedir": {
+            "type": "string",
+            "label": "Save Directory",
+            "default": "~/Library/Application Support/xenolauncher/renpysaves/"
+        },
+        "command": {
+            "type": "string",
+            "label": "Other Commands",
+            "default": ""
+        }
+    }
+}

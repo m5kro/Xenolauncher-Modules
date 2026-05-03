@@ -13,7 +13,6 @@ async function getAvailable() {
 
     const releases = await res.json();
     const out = {};
-    const priority = { staging: 0, devel: 1, stable: 2 };
 
     for (const release of releases || []) {
         if (!release || release.draft) continue;
@@ -22,28 +21,19 @@ async function getAvailable() {
         const assets = Array.isArray(release.assets) ? release.assets : [];
         if (!tag || assets.length === 0) continue;
 
-        const candidates = assets
-            .map((asset) => {
-                const name = asset && asset.name ? String(asset.name) : "";
-                const match = name.match(/^wine-(staging|devel|stable)-.+-osx64\.tar\.xz$/i);
-                if (!match || !asset.browser_download_url) return null;
-                const channel = match[1].toLowerCase();
-                return {
-                    channel,
+        for (const asset of assets) {
+            const name = asset && asset.name ? String(asset.name) : "";
+            const match = name.match(/^wine-(staging|devel|stable)-.+-osx64\.tar\.xz$/i);
+            if (!match || !asset.browser_download_url) continue;
+
+            const channel = match[1].toLowerCase();
+            out[`${tag}-${channel}`] = {
+                universal: {
                     link: asset.browser_download_url,
-                };
-            })
-            .filter(Boolean)
-            .sort((a, b) => priority[a.channel] - priority[b.channel]);
-
-        if (!candidates.length) continue;
-
-        out[tag] = {
-            universal: {
-                link: candidates[0].link,
-                unzip: true,
-            },
-        };
+                    unzip: true,
+                },
+            };
+        }
     }
 
     return out;

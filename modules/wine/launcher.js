@@ -47,8 +47,8 @@ function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
         const installed = getInstalledVersions();
         const requested = gameArgs && typeof gameArgs.version === "string" ? gameArgs.version.trim() : "";
         if (requested && installed.includes(requested)) return requested;
-        if (installed.includes("11.7")) return "11.7";
-        return installed[0] || requested || "11.7";
+        if (installed.includes("11.7-staging")) return "11.7-staging";
+        return installed[0] || requested || "11.7-staging";
     }
 
     function findWineApp(versionDir) {

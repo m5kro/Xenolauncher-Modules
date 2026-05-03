@@ -5,7 +5,7 @@
     "author": "m5kro",
     "license": "GPL-3.0",
     "dependencies": {
-        "version/11.7": {
+        "version/11.7-staging": {
             "universal": {
                 "link": "https://github.com/Gcenx/macOS_Wine_builds/releases/download/11.7/wine-staging-11.7-osx64.tar.xz",
                 "unzip": true
@@ -21,7 +21,7 @@
             "type": "multi-version",
             "label": "Wine Version",
             "version-script": "wine.js",
-            "default": "11.7"
+            "default": "11.7-staging"
         }
     }
 }

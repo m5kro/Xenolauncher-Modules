@@ -16,7 +16,7 @@ function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
         resolvePrefix,
         writeMetadata,
     } = require("./prefix.js");
-    const { applyDxvkToPrefix, getDxvkLaunchEnv } = require("./dxvk-prefix.js");
+    const { applyD3dBackendToPrefix, getD3dBackendLaunchEnv } = require("./d3d-backend-prefix.js");
 
     const arch = os.arch();
     const moduleRoot = path.join(
@@ -126,7 +126,7 @@ function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
         });
     }
 
-    function buildMetadata(prefixPath, automatic, existingMetadata, wineVersion, wineApp, dxvkState) {
+    function buildMetadata(prefixPath, automatic, existingMetadata, wineVersion, wineApp, d3dBackendState) {
         const now = new Date().toISOString();
         return {
             schema: 1,
@@ -138,7 +138,7 @@ function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
             prefixPath,
             wineVersion,
             wineApp,
-            dxvk: dxvkState,
+            d3dBackend: d3dBackendState,
             createdAt: existingMetadata && existingMetadata.createdAt ? existingMetadata.createdAt : now,
             updatedAt: now,
         };
@@ -182,15 +182,18 @@ function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
             await execWineBinary(winebootBinary, ["--update"], { env: wineEnv });
         }
 
-        const dxvkState = applyDxvkToPrefix(winePrefix, moduleRoot, args, existingMetadata);
+        const d3dBackendState = applyD3dBackendToPrefix(winePrefix, moduleRoot, args, existingMetadata);
 
         try {
-            writeMetadata(winePrefix, buildMetadata(winePrefix, automatic, existingMetadata, wineVersion, wineApp, dxvkState));
+            writeMetadata(
+                winePrefix,
+                buildMetadata(winePrefix, automatic, existingMetadata, wineVersion, wineApp, d3dBackendState)
+            );
         } catch (error) {
             console.warn("Failed to write Wine prefix metadata:", error);
         }
 
-        launchGame(wineBinary, winePrefix, getDxvkLaunchEnv(args));
+        launchGame(wineBinary, winePrefix, getD3dBackendLaunchEnv(args, d3dBackendState));
     }
 
     run().catch((error) => {

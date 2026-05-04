@@ -2,7 +2,6 @@
 // Thanks to Gcenx for prebuilt Wine binaries: https://github.com/Gcenx/macOS_Wine_builds
 // TODO:
 // DXVK dll overrides (currently experiencing major graphical issues, I'm probably doing something wrong)
-// Custom prefix per game
 // Handle installers
 // Winetricks to make everything a bit easier
 function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
@@ -10,6 +9,13 @@ function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
     const { execFile } = require("child_process");
     const fs = require("fs");
     const os = require("os");
+    const {
+        MANAGED_BY,
+        isValidPrefix,
+        readMetadata,
+        resolvePrefix,
+        writeMetadata,
+    } = require("./prefix.js");
 
     const arch = os.arch();
     const moduleRoot = path.join(
@@ -21,6 +27,7 @@ function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
         "wine"
     );
     const versionsRoot = path.join(moduleRoot, "deps", "version");
+    const args = gameArgs || {};
 
     function showError(message) {
         console.error(message);
@@ -45,7 +52,7 @@ function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
 
     function resolveVersion() {
         const installed = getInstalledVersions();
-        const requested = gameArgs && typeof gameArgs.version === "string" ? gameArgs.version.trim() : "";
+        const requested = typeof args.version === "string" ? args.version.trim() : "";
         if (requested && installed.includes(requested)) return requested;
         if (installed.includes("11.7-staging")) return "11.7-staging";
         return installed[0] || requested || "11.7-staging";
@@ -75,54 +82,39 @@ function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
         return null;
     }
 
-    function runBinary(binary, args, options, callback) {
+    function execWineBinary(binary, binaryArgs, options = {}) {
         const env = { ...process.env, ...(options.env || {}) };
         const execOptions = {
             env,
             cwd: options.cwd,
         };
 
-        if (arch === "arm64") {
-            execFile("arch", ["-x86_64", binary, ...args], execOptions, callback);
-        } else {
-            execFile(binary, args, execOptions, callback);
-        }
+        return new Promise((resolve, reject) => {
+            const command = arch === "arm64" ? "arch" : binary;
+            const commandArgs = arch === "arm64" ? ["-x86_64", binary, ...binaryArgs] : binaryArgs;
+
+            execFile(command, commandArgs, execOptions, (error, stdout, stderr) => {
+                if (stdout) console.log(stdout);
+                if (stderr) console.error(stderr);
+                if (error) reject(error);
+                else resolve();
+            });
+        });
     }
 
-    const wineVersion = resolveVersion();
-    const wineVersionDir = path.join(versionsRoot, wineVersion);
-    const wineApp = findWineApp(wineVersionDir);
+    function launchGame(wineBinary, winePrefix) {
+        const env = { ...process.env, WINEPREFIX: winePrefix };
+        const execOptions = { env, cwd: gameFolder };
+        const command = arch === "arm64" ? "arch" : wineBinary;
+        const commandArgs = arch === "arm64" ? ["-x86_64", wineBinary, gamePath] : [gamePath];
 
-    if (!wineApp) {
-        showError(`Wine ${wineVersion} is not installed or does not contain a Wine app bundle.`);
-        return;
-    }
-
-    // Wine Binary is only x86_64 (intel) so rosetta2 is required on Apple Silicon
-    const wineBinary = path.join(wineApp, "Contents", "MacOS", "wine");
-    const winebootBinary = path.join(wineApp, "Contents", "Resources", "wine", "bin", "wineboot");
-    
-    // Will be replaced with per-game prefix later
-    const winePrefix = path.join(
-            os.homedir(),
-            ".wine"
+        console.log(
+            arch === "arm64"
+                ? "Apple Silicon detected, using rosetta2 to launch the game"
+                : "Intel architecture detected, launching the game normally"
         );
-    
-    if (!fs.existsSync(wineBinary)) {
-        showError(`Wine binary not found at ${wineBinary}`);
-        return;
-    }
 
-    function launchGame() {
-        const launchOptions = { env: { WINEPREFIX: winePrefix }, cwd: gameFolder };
-
-        if (arch === "arm64") {
-            console.log("Apple Silicon detected, using rosetta2 to launch the game");
-        } else {
-            console.log("Intel architecture detected, launching the game normally");
-        }
-
-        runBinary(wineBinary, [gamePath], launchOptions, (error, stdout, stderr) => {
+        execFile(command, commandArgs, execOptions, (error, stdout, stderr) => {
             if (error) {
                 showError(`Error launching game: ${error.message}`);
                 return;
@@ -133,33 +125,73 @@ function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
         });
     }
 
-    if (!fs.existsSync(winePrefix)) {
-        // Create default wine prefix with wineboot before launching.
-        if (!fs.existsSync(winebootBinary)) {
-            showError(`wineboot not found at ${winebootBinary}`);
-            return;
-        }
-
-        console.log(
-            arch === "arm64"
-                ? "Apple Silicon detected, using rosetta2 to initialize wine prefix"
-                : "Intel architecture detected, initializing wine prefix normally"
-        );
-
-        runBinary(winebootBinary, ["--init"], { env: { WINEPREFIX: winePrefix } }, (error, stdout, stderr) => {
-            if (error) {
-                showError(`Error initializing wine prefix: ${error.message}`);
-                return;
-            }
-            if (stdout) console.log(stdout);
-            if (stderr) console.error(stderr);
-            console.log(`Wine prefix initialized at ${winePrefix}`);
-            launchGame();
-        });
-        return;
+    function buildMetadata(prefixPath, automatic, existingMetadata, wineVersion, wineApp) {
+        const now = new Date().toISOString();
+        return {
+            schema: 1,
+            managedBy: MANAGED_BY,
+            automaticPrefix: automatic,
+            gameName: gameName || "",
+            gamePath,
+            gameFolder,
+            prefixPath,
+            wineVersion,
+            wineApp,
+            createdAt: existingMetadata && existingMetadata.createdAt ? existingMetadata.createdAt : now,
+            updatedAt: now,
+        };
     }
 
-    launchGame();
-    
+    async function run() {
+        const wineVersion = resolveVersion();
+        const wineVersionDir = path.join(versionsRoot, wineVersion);
+        const wineApp = findWineApp(wineVersionDir);
+
+        if (!wineApp) {
+            throw new Error(`Wine ${wineVersion} is not installed or does not contain a Wine app bundle.`);
+        }
+
+        // Gcenx macOS Wine builds are x86_64, so Rosetta is required on Apple Silicon.
+        const wineBinary = path.join(wineApp, "Contents", "MacOS", "wine");
+        const winebootBinary = path.join(wineApp, "Contents", "Resources", "wine", "bin", "wineboot");
+
+        if (!fs.existsSync(wineBinary)) {
+            throw new Error(`Wine binary not found at ${wineBinary}`);
+        }
+        if (!fs.existsSync(winebootBinary)) {
+            throw new Error(`wineboot not found at ${winebootBinary}`);
+        }
+
+        const { prefixPath: winePrefix, automatic } = resolvePrefix(args, gameName, gameFolder, gamePath);
+        fs.mkdirSync(path.dirname(winePrefix), { recursive: true });
+
+        const existingMetadata = readMetadata(winePrefix);
+        const validPrefix = isValidPrefix(winePrefix);
+        const wineEnv = { WINEPREFIX: winePrefix };
+
+        if (!validPrefix) {
+            console.log(`Initializing Wine prefix at ${winePrefix}`);
+            await execWineBinary(winebootBinary, ["--init"], { env: { ...wineEnv, WINEARCH: "win64" } });
+            if (!isValidPrefix(winePrefix)) {
+                throw new Error(`Wine prefix initialization did not create a valid prefix at ${winePrefix}`);
+            }
+        } else if (existingMetadata && existingMetadata.wineVersion && existingMetadata.wineVersion !== wineVersion) {
+            console.log(`Wine version changed from ${existingMetadata.wineVersion} to ${wineVersion}; updating prefix.`);
+            await execWineBinary(winebootBinary, ["--update"], { env: wineEnv });
+        }
+
+        try {
+            writeMetadata(winePrefix, buildMetadata(winePrefix, automatic, existingMetadata, wineVersion, wineApp));
+        } catch (error) {
+            console.warn("Failed to write Wine prefix metadata:", error);
+        }
+
+        launchGame(wineBinary, winePrefix);
+    }
+
+    run().catch((error) => {
+        showError(error && error.message ? error.message : String(error));
+    });
 }
+
 exports.launch = launch;

@@ -22,6 +22,11 @@
             "label": "Wine Version",
             "version-script": "wine.js",
             "default": "11.7-staging"
+        },
+        "winePrefix": {
+            "type": "string",
+            "label": "Custom Wine Prefix (Blank for automatic prefix)",
+            "default": ""
         }
     }
 }

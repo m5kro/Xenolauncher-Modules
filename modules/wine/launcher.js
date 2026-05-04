@@ -1,7 +1,7 @@
 // Use wine to launch Windows applications
 // Thanks to Gcenx for prebuilt Wine binaries: https://github.com/Gcenx/macOS_Wine_builds
 // TODO:
-// DXVK dll overrides (currently experiencing major graphical issues, I'm probably doing something wrong)
+// Add D9VK support later for Direct3D 9 games.
 // Handle installers
 // Winetricks to make everything a bit easier
 function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
@@ -16,6 +16,7 @@ function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
         resolvePrefix,
         writeMetadata,
     } = require("./prefix.js");
+    const { applyDxvkToPrefix, getDxvkLaunchEnv } = require("./dxvk-prefix.js");
 
     const arch = os.arch();
     const moduleRoot = path.join(
@@ -102,8 +103,8 @@ function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
         });
     }
 
-    function launchGame(wineBinary, winePrefix) {
-        const env = { ...process.env, WINEPREFIX: winePrefix };
+    function launchGame(wineBinary, winePrefix, launchEnv) {
+        const env = { ...process.env, WINEPREFIX: winePrefix, ...(launchEnv || {}) };
         const execOptions = { env, cwd: gameFolder };
         const command = arch === "arm64" ? "arch" : wineBinary;
         const commandArgs = arch === "arm64" ? ["-x86_64", wineBinary, gamePath] : [gamePath];
@@ -125,7 +126,7 @@ function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
         });
     }
 
-    function buildMetadata(prefixPath, automatic, existingMetadata, wineVersion, wineApp) {
+    function buildMetadata(prefixPath, automatic, existingMetadata, wineVersion, wineApp, dxvkState) {
         const now = new Date().toISOString();
         return {
             schema: 1,
@@ -137,6 +138,7 @@ function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
             prefixPath,
             wineVersion,
             wineApp,
+            dxvk: dxvkState,
             createdAt: existingMetadata && existingMetadata.createdAt ? existingMetadata.createdAt : now,
             updatedAt: now,
         };
@@ -180,13 +182,15 @@ function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
             await execWineBinary(winebootBinary, ["--update"], { env: wineEnv });
         }
 
+        const dxvkState = applyDxvkToPrefix(winePrefix, moduleRoot, args, existingMetadata);
+
         try {
-            writeMetadata(winePrefix, buildMetadata(winePrefix, automatic, existingMetadata, wineVersion, wineApp));
+            writeMetadata(winePrefix, buildMetadata(winePrefix, automatic, existingMetadata, wineVersion, wineApp, dxvkState));
         } catch (error) {
             console.warn("Failed to write Wine prefix metadata:", error);
         }
 
-        launchGame(wineBinary, winePrefix);
+        launchGame(wineBinary, winePrefix, getDxvkLaunchEnv(args));
     }
 
     run().catch((error) => {

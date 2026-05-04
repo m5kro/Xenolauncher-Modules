@@ -10,6 +10,12 @@
                 "link": "https://github.com/Gcenx/macOS_Wine_builds/releases/download/11.7/wine-staging-11.7-osx64.tar.xz",
                 "unzip": true
             }
+        },
+        "dxvkVersion/v1.10.3-20230507-repack": {
+            "universal": {
+                "link": "https://github.com/Gcenx/DXVK-macOS/releases/download/v1.10.3-20230507-repack/dxvk-macOS-async-v1.10.3-20230507-repack.tar.gz",
+                "unzip": true
+            }
         }
     },
     "autodetect": {
@@ -27,6 +33,33 @@
             "type": "string",
             "label": "Custom Wine Prefix (Blank for automatic prefix)",
             "default": ""
+        },
+        "enableDxvk": {
+            "type": "boolean",
+            "label": "Enable DXVK (Direct3D 10/11)",
+            "default": false
+        },
+        "dxvkVersion": {
+            "type": "multi-version",
+            "label": "DXVK Version",
+            "version-script": "dxvk.js",
+            "default": "v1.10.3-20230507-repack"
+        },
+        "dxvkHud": {
+            "type": "dropdown",
+            "label": "DXVK HUD",
+            "default": "off",
+            "options": [
+                { "label": "Off", "value": "off" },
+                { "label": "FPS", "value": "fps" },
+                { "label": "Devinfo + FPS", "value": "devinfo-fps" },
+                { "label": "Full", "value": "full" }
+            ]
+        },
+        "dxvkAsync": {
+            "type": "boolean",
+            "label": "Enable DXVK Async",
+            "default": false
         }
     }
 }

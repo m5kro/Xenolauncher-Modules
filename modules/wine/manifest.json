@@ -46,6 +46,11 @@
             "label": "Custom Wine Prefix (Blank for automatic prefix)",
             "default": ""
         },
+        "isInstaller": {
+            "type": "boolean",
+            "label": "Is Installer",
+            "default": false
+        },
         "d3dBackend": {
             "type": "dropdown",
             "label": "Direct3D 10/11 Backend",

@@ -1,6 +1,6 @@
 {
     "name": "Wine",
-    "version": "0.1.0",
+    "version": "0.5.0",
     "description": "IN BETA! A module to launch Windows games using Wine.",
     "author": "m5kro",
     "license": "GPL-3.0",

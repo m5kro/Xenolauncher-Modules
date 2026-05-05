@@ -1,3 +1,4 @@
+// Manages Wine prefixes for games launched with the wine module
 const crypto = require("crypto");
 const fs = require("fs");
 const os = require("os");
@@ -29,6 +30,7 @@ function safeName(gameName, gamePath) {
     return safe || "game";
 }
 
+// Just to make sure no collisions happen
 function shortHash(value) {
     return crypto.createHash("sha1").update(String(value || "game")).digest("hex").slice(0, 8);
 }

@@ -1,3 +1,4 @@
+// Cleans up prefix after game deletion
 async function postDelete(gameName, gameFolder, gamePath, ui) {
     const fs = require("fs");
     const {

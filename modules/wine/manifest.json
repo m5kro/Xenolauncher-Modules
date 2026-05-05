@@ -31,7 +31,7 @@
         }
     },
     "autodetect": {
-        "extensions": ["exe", "msi"],
+        "extensions": ["exe", "msi", "bat", "cmd"],
         "all_required": false
     },
     "gameArgs": {
@@ -43,7 +43,7 @@
         },
         "winePrefix": {
             "type": "string",
-            "label": "Custom Wine Prefix (Blank for automatic prefix)",
+            "label": "Custom Wine Prefix Path (Blank for automatic prefix)",
             "default": ""
         },
         "isInstaller": {

@@ -2,7 +2,7 @@
 // Thanks to Gcenx for prebuilt Wine binaries: https://github.com/Gcenx/macOS_Wine_builds
 // Thanks to crossover for Wine CX
 // TODO:
-// Improve post-install executable selection UI.
+// Improve post-install executable selection UI. (Maybe custom button)
 // Winetricks for stuff that needs it
 function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
     const path = require("path");
@@ -488,7 +488,7 @@ function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
             throw new Error(`Wine ${wineVersion} is not installed or does not contain a Wine app bundle.`);
         }
 
-        // Gcenx macOS Wine builds are x86_64, so Rosetta is required on Apple Silicon.
+        // macOS Wine builds are x86_64, so Rosetta is required on Apple Silicon.
         const wineBinary = path.join(wineApp, "Contents", "MacOS", "wine");
 
         if (!fs.existsSync(wineBinary)) {

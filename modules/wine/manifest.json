@@ -22,6 +22,12 @@
                 "link": "https://github.com/3Shain/dxmt/releases/download/v0.80/dxmt-v0.80-builtin.tar.gz",
                 "unzip": true
             }
+        },
+        "moltenvkVersion/v1.4.1-privateapi": {
+            "universal": {
+                "link": "https://github.com/KhronosGroup/MoltenVK/releases/download/v1.4.1/MoltenVK-macos-privateapi.tar",
+                "unzip": true
+            }
         }
     },
     "autodetect": {
@@ -61,6 +67,12 @@
             "label": "DXMT Version",
             "version-script": "dxmt.js",
             "default": "v0.80"
+        },
+        "moltenvkVersion": {
+            "type": "multi-version",
+            "label": "MoltenVK Version",
+            "version-script": "moltenvk.js",
+            "default": "v1.4.1-privateapi"
         },
         "dxvkHud": {
             "type": "dropdown",

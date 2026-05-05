@@ -13,5 +13,5 @@ Please read [module-docs.md](https://github.com/m5kro/Xenolauncher-Modules/blob/
 | NW.js | 1.4.4 | m5kro | GPL-3.0 | A module to launch NW.js native games like RPG Maker MV and MZ. |
 | RenPy | 1.0.2 | m5kro | GPL-3.0 | A module to launch Ren'Py games. |
 | Ruffle | 1.0.5 | m5kro | GPL-3.0 | Launch Flash games using the Ruffle emulator. |
-| Wine | 0.1.0 | m5kro | GPL-3.0 | IN BETA! A module to launch Windows games using Wine. |
+| Wine | 0.5.0 | m5kro | GPL-3.0 | IN BETA! A module to launch Windows games using Wine. |
 

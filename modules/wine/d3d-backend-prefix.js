@@ -1,9 +1,12 @@
 const fs = require("fs");
 const path = require("path");
+const { execFileSync } = require("child_process");
 
 const BACKUP_SUFFIX = ".xenolauncher-orig";
+const DXMT_BACKUP_DIR = ".xenolauncher-dxmt-backup";
 const BACKEND_DLLS = ["dxgi", "d3d10", "d3d10_1", "d3d10core", "d3d11", "winemetal"];
 const DXVK_DLLS = ["dxgi", "d3d10", "d3d10_1", "d3d10core", "d3d11"];
+const DXMT_WINDOWS_DLLS = ["dxgi", "d3d10core", "d3d11", "winemetal"];
 
 function isEnabled(value) {
     return value === true || value === "true";
@@ -132,7 +135,7 @@ function shouldRestorePrevious(previous, backend, version) {
     return Boolean(previous.version && version && previous.version !== version);
 }
 
-function applyD3dBackendToPrefix(prefixPath, moduleRoot, args, existingMetadata) {
+function applyD3dBackendToPrefix(prefixPath, moduleRoot, args, existingMetadata, wineApp) {
     const backend = normalizeBackend(args || {});
     const previous = getPreviousBackend(existingMetadata);
 
@@ -151,7 +154,7 @@ function applyD3dBackendToPrefix(prefixPath, moduleRoot, args, existingMetadata)
     }
 
     if (backend === "dxvk") return applyDxvkToPrefix(prefixPath, moduleRoot, version);
-    return applyDxmt(moduleRoot, version);
+    return applyDxmtToWineBundle(moduleRoot, version, wineApp);
 }
 
 function applyDxvkToPrefix(prefixPath, moduleRoot, version) {
@@ -194,10 +197,43 @@ function applyDxvkToPrefix(prefixPath, moduleRoot, version) {
     };
 }
 
-function applyDxmt(moduleRoot, version) {
+function backupWineBundleFile(wineLibRoot, relativePath) {
+    const target = path.join(wineLibRoot, relativePath);
+    if (!fs.existsSync(target)) return;
+
+    const backup = path.join(wineLibRoot, DXMT_BACKUP_DIR, relativePath);
+    if (fs.existsSync(backup)) return;
+
+    fs.mkdirSync(path.dirname(backup), { recursive: true });
+    fs.copyFileSync(target, backup);
+}
+
+function copyDxmtWineBundleFile(source, wineLibRoot, relativePath, patchedFiles) {
+    if (!fs.existsSync(source)) return;
+
+    backupWineBundleFile(wineLibRoot, relativePath);
+
+    const target = path.join(wineLibRoot, relativePath);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.copyFileSync(source, target);
+    patchedFiles.push(relativePath);
+}
+
+function codesignIfPossible(filePath) {
+    try {
+        execFileSync("codesign", ["--force", "--sign", "-", "--timestamp=none", filePath], { stdio: "ignore" });
+    } catch (error) {
+        console.warn(`Failed to codesign ${filePath}:`, error && error.message ? error.message : error);
+    }
+}
+
+function applyDxmtToWineBundle(moduleRoot, version, wineApp) {
     const versionRoot = path.join(moduleRoot, "deps", "dxmtVersion", version);
     if (!fs.existsSync(versionRoot)) {
         throw new Error(`DXMT ${version} is not installed.`);
+    }
+    if (!wineApp) {
+        throw new Error("DXMT requires a selected Wine app bundle.");
     }
 
     const payloadRoot = findDxmtPayload(versionRoot);
@@ -205,13 +241,43 @@ function applyDxmt(moduleRoot, version) {
         throw new Error(`DXMT ${version} is installed but does not contain Wine builtin DLL folders.`);
     }
 
+    const wineLibRoot = path.join(wineApp, "Contents", "Resources", "wine", "lib", "wine");
+    if (!fs.existsSync(wineLibRoot)) {
+        throw new Error(`Wine bundle does not contain a lib/wine directory: ${wineLibRoot}`);
+    }
+
+    const patchedFiles = [];
+
+    for (const archDir of ["x86_64-windows", "i386-windows"]) {
+        for (const dllName of DXMT_WINDOWS_DLLS) {
+            copyDxmtWineBundleFile(
+                path.join(payloadRoot, archDir, `${dllName}.dll`),
+                wineLibRoot,
+                path.join(archDir, `${dllName}.dll`),
+                patchedFiles
+            );
+        }
+    }
+
+    const winemetalSo = path.join("x86_64-unix", "winemetal.so");
+    copyDxmtWineBundleFile(path.join(payloadRoot, winemetalSo), wineLibRoot, winemetalSo, patchedFiles);
+
+    const patchedWinemetalSo = path.join(wineLibRoot, winemetalSo);
+    if (fs.existsSync(patchedWinemetalSo)) codesignIfPossible(patchedWinemetalSo);
+
+    if (patchedFiles.length === 0) {
+        throw new Error(`DXMT ${version} does not contain files supported by this module.`);
+    }
+
     return {
         enabled: true,
         backend: "dxmt",
         version,
-        mode: "winedllpath",
+        mode: "wine-bundle",
+        wineApp,
         payloadRoot,
-        managedDlls: [],
+        backupRoot: path.join(wineLibRoot, DXMT_BACKUP_DIR),
+        managedDlls: patchedFiles,
         updatedAt: new Date().toISOString(),
     };
 }
@@ -222,15 +288,10 @@ function getD3dBackendLaunchEnv(args, backendState) {
     if (backend === "none") return {};
 
     if (backend === "dxmt") {
-        const env = {
-            WINEDLLOVERRIDES: "dxgi,d3d10core,d3d11,winemetal=b;d3d10,d3d10_1=b",
+        return {
+            WINE_MF_MFT_SKIP_VERIFY: "1",
+            WINEDLLOVERRIDES: "nvapi,nvapi64=;mf,mfplat,mfreadwrite,mfplay=b;d3d11,d3d10core,dxgi=b",
         };
-        if (backendState && backendState.payloadRoot) {
-            env.WINEDLLPATH = process.env.WINEDLLPATH
-                ? `${backendState.payloadRoot}:${process.env.WINEDLLPATH}`
-                : backendState.payloadRoot;
-        }
-        return env;
     }
 
     const env = {

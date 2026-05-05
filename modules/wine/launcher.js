@@ -204,7 +204,7 @@ function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
             await execWineboot(wineboot, ["--update"], { env: wineEnv });
         }
 
-        const d3dBackendState = applyD3dBackendToPrefix(winePrefix, moduleRoot, args, existingMetadata);
+        const d3dBackendState = applyD3dBackendToPrefix(winePrefix, moduleRoot, args, existingMetadata, wineApp);
 
         try {
             writeMetadata(

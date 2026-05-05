@@ -5,15 +5,95 @@
     "author": "m5kro",
     "license": "GPL-3.0",
     "dependencies": {
-        "version/11.0-rc4": {
+        "version/26.1.0-crossover": {
             "universal": {
-                "link": "https://github.com/Gcenx/macOS_Wine_builds/releases/download/11.0-rc4/wine-staging-11.0-rc4-osx64.tar.xz",
+                "link": "https://github.com/m5kro/winecx-dist/releases/download/v26.1.0/winecx-26.1.0-osx64.tar.gz",
+                "unzip": true
+            }
+        },
+        "dxvkVersion/v1.10.3-20230507-repack": {
+            "universal": {
+                "link": "https://github.com/Gcenx/DXVK-macOS/releases/download/v1.10.3-20230507-repack/dxvk-macOS-async-v1.10.3-20230507-repack.tar.gz",
+                "unzip": true
+            }
+        },
+        "dxmtVersion/v0.80": {
+            "universal": {
+                "link": "https://github.com/3Shain/dxmt/releases/download/v0.80/dxmt-v0.80-builtin.tar.gz",
+                "unzip": true
+            }
+        },
+        "moltenvkVersion/v1.4.1-privateapi": {
+            "universal": {
+                "link": "https://github.com/KhronosGroup/MoltenVK/releases/download/v1.4.1/MoltenVK-macos-privateapi.tar",
                 "unzip": true
             }
         }
     },
     "autodetect": {
-        "extensions": ["exe"],
+        "extensions": ["exe", "msi", "bat", "cmd"],
         "all_required": false
+    },
+    "gameArgs": {
+        "version": {
+            "type": "multi-version",
+            "label": "Wine Version",
+            "version-script": "wine.js",
+            "default": "26.1.0-crossover"
+        },
+        "winePrefix": {
+            "type": "string",
+            "label": "Custom Wine Prefix Path (Blank for automatic prefix)",
+            "default": ""
+        },
+        "isInstaller": {
+            "type": "boolean",
+            "label": "Is Installer",
+            "default": false
+        },
+        "d3dBackend": {
+            "type": "dropdown",
+            "label": "Direct3D 10/11 Backend",
+            "default": "dxmt",
+            "options": [
+                { "label": "None", "value": "none" },
+                { "label": "DXVK", "value": "dxvk" },
+                { "label": "DXMT", "value": "dxmt" }
+            ]
+        },
+        "dxvkVersion": {
+            "type": "multi-version",
+            "label": "DXVK Version",
+            "version-script": "dxvk.js",
+            "default": "v1.10.3-20230507-repack"
+        },
+        "dxmtVersion": {
+            "type": "multi-version",
+            "label": "DXMT Version",
+            "version-script": "dxmt.js",
+            "default": "v0.80"
+        },
+        "moltenvkVersion": {
+            "type": "multi-version",
+            "label": "MoltenVK Version",
+            "version-script": "moltenvk.js",
+            "default": "v1.4.1-privateapi"
+        },
+        "dxvkHud": {
+            "type": "dropdown",
+            "label": "DXVK HUD",
+            "default": "off",
+            "options": [
+                { "label": "Off", "value": "off" },
+                { "label": "FPS", "value": "fps" },
+                { "label": "Devinfo + FPS", "value": "devinfo-fps" },
+                { "label": "Full", "value": "full" }
+            ]
+        },
+        "dxvkAsync": {
+            "type": "boolean",
+            "label": "Enable DXVK Async",
+            "default": false
+        }
     }
 }

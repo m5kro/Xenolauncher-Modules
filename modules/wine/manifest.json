@@ -5,9 +5,9 @@
     "author": "m5kro",
     "license": "GPL-3.0",
     "dependencies": {
-        "version/11.7-staging": {
+        "version/26.1.0-crossover": {
             "universal": {
-                "link": "https://github.com/Gcenx/macOS_Wine_builds/releases/download/11.7/wine-staging-11.7-osx64.tar.xz",
+                "link": "https://github.com/srimanachanta/winecx-dist/releases/download/v26.1.0/winecx-26.1.0-osx64.tar.gz",
                 "unzip": true
             }
         },
@@ -33,7 +33,7 @@
             "type": "multi-version",
             "label": "Wine Version",
             "version-script": "wine.js",
-            "default": "11.7-staging"
+            "default": "26.1.0-crossover"
         },
         "winePrefix": {
             "type": "string",

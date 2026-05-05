@@ -103,6 +103,27 @@ function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
         });
     }
 
+    function resolveWineboot(wineApp, wineBinary) {
+        const wineRoot = path.join(wineApp, "Contents", "Resources", "wine");
+        const nativeWineboot = path.join(wineRoot, "bin", "wineboot");
+        if (fs.existsSync(nativeWineboot)) {
+            return { binary: nativeWineboot, argsPrefix: [] };
+        }
+
+        for (const builtinDir of ["x86_64-windows", "i386-windows"]) {
+            const builtinWineboot = path.join(wineRoot, "lib", "wine", builtinDir, "wineboot.exe");
+            if (fs.existsSync(builtinWineboot)) {
+                return { binary: wineBinary, argsPrefix: ["wineboot.exe"] };
+            }
+        }
+
+        return null;
+    }
+
+    function execWineboot(wineboot, winebootArgs, options = {}) {
+        return execWineBinary(wineboot.binary, [...wineboot.argsPrefix, ...winebootArgs], options);
+    }
+
     function launchGame(wineBinary, winePrefix, launchEnv) {
         const env = { ...process.env, WINEPREFIX: winePrefix, ...(launchEnv || {}) };
         const execOptions = { env, cwd: gameFolder };
@@ -155,13 +176,14 @@ function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
 
         // Gcenx macOS Wine builds are x86_64, so Rosetta is required on Apple Silicon.
         const wineBinary = path.join(wineApp, "Contents", "MacOS", "wine");
-        const winebootBinary = path.join(wineApp, "Contents", "Resources", "wine", "bin", "wineboot");
 
         if (!fs.existsSync(wineBinary)) {
             throw new Error(`Wine binary not found at ${wineBinary}`);
         }
-        if (!fs.existsSync(winebootBinary)) {
-            throw new Error(`wineboot not found at ${winebootBinary}`);
+
+        const wineboot = resolveWineboot(wineApp, wineBinary);
+        if (!wineboot) {
+            throw new Error(`wineboot not found in ${wineApp}`);
         }
 
         const { prefixPath: winePrefix, automatic } = resolvePrefix(args, gameName, gameFolder, gamePath);
@@ -173,13 +195,13 @@ function launch(gamePath, gameFolder, gameArgs, gameName, ui) {
 
         if (!validPrefix) {
             console.log(`Initializing Wine prefix at ${winePrefix}`);
-            await execWineBinary(winebootBinary, ["--init"], { env: { ...wineEnv, WINEARCH: "win64" } });
+            await execWineboot(wineboot, ["--init"], { env: { ...wineEnv, WINEARCH: "win64" } });
             if (!isValidPrefix(winePrefix)) {
                 throw new Error(`Wine prefix initialization did not create a valid prefix at ${winePrefix}`);
             }
         } else if (existingMetadata && existingMetadata.wineVersion && existingMetadata.wineVersion !== wineVersion) {
             console.log(`Wine version changed from ${existingMetadata.wineVersion} to ${wineVersion}; updating prefix.`);
-            await execWineBinary(winebootBinary, ["--update"], { env: wineEnv });
+            await execWineboot(wineboot, ["--update"], { env: wineEnv });
         }
 
         const d3dBackendState = applyD3dBackendToPrefix(winePrefix, moduleRoot, args, existingMetadata);

@@ -51,7 +51,7 @@ async function getGcenxWineBuilds() {
 
 async function getWineCxBuilds() {
     const releases = await fetchGithubReleases(
-        "https://api.github.com/repos/srimanachanta/winecx-dist/releases?per_page=100"
+        "https://api.github.com/repos/m5kro/winecx-dist/releases?per_page=100"
     );
     const out = {};
 

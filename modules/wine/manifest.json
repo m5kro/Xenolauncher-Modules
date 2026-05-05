@@ -7,7 +7,7 @@
     "dependencies": {
         "version/26.1.0-crossover": {
             "universal": {
-                "link": "https://github.com/srimanachanta/winecx-dist/releases/download/v26.1.0/winecx-26.1.0-osx64.tar.gz",
+                "link": "https://github.com/m5kro/winecx-dist/releases/download/v26.1.0/winecx-26.1.0-osx64.tar.gz",
                 "unzip": true
             }
         },
@@ -49,7 +49,7 @@
         "d3dBackend": {
             "type": "dropdown",
             "label": "Direct3D 10/11 Backend",
-            "default": "none",
+            "default": "dxmt",
             "options": [
                 { "label": "None", "value": "none" },
                 { "label": "DXVK", "value": "dxvk" },

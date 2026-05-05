@@ -31,7 +31,7 @@
         }
     },
     "autodetect": {
-        "extensions": ["exe"],
+        "extensions": ["exe", "msi"],
         "all_required": false
     },
     "gameArgs": {

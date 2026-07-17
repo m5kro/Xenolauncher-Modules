@@ -9,7 +9,7 @@ Please read [module-docs.md](https://github.com/m5kro/Xenolauncher-Modules/blob/
 | :----------------: | :--------: | :----------------: | :----------------: | :---- |
 | EasyRPG | 1.1.1 | m5kro | GPL-3.0 | A module to launch RPG Maker 2000/2003 games with EasyRPG Player. |
 | MacOS | 1.0.0 | m5kro | MIT | A default module to launch MacOS native games. |
-| MKXP-Z | 1.1.4 | m5kro | GPL-3.0 | A module to launch MKXP-Z native games like RPG Maker XP, VX, and VX Ace. |
+| MKXP-Z | 1.1.5 | m5kro | GPL-3.0 | A module to launch MKXP-Z native games like RPG Maker XP, VX, and VX Ace. |
 | NW.js | 1.4.4 | m5kro | GPL-3.0 | A module to launch NW.js native games like RPG Maker MV and MZ. |
 | RenPy | 1.0.2 | m5kro | GPL-3.0 | A module to launch Ren'Py games. |
 | Ruffle | 1.0.5 | m5kro | GPL-3.0 | Launch Flash games using the Ruffle emulator. |

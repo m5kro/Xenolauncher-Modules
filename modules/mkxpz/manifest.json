@@ -1,6 +1,6 @@
 {
     "name": "MKXP-Z",
-    "version": "1.1.4",
+    "version": "1.1.5",
     "description": "A module to launch MKXP-Z native games like RPG Maker XP, VX, and VX Ace.",
     "author": "m5kro",
     "license": "GPL-3.0",
@@ -25,7 +25,7 @@
         },
         "soundfont": {
             "universal": {
-                "link": "https://musical-artifacts.com/artifacts/841/GMGSx.SF2",
+                "link": "https://github.com/mmontag/chip-player-js/raw/refs/heads/master/public/soundfonts/gmgsx-plus.sf2",
                 "unzip": false
             }
         }
@@ -166,7 +166,7 @@
         "midiSoundFont": {
             "type": "string",
             "label": "MIDI SoundFont (SF2)",
-            "default": "~/Library/Application Support/xenolauncher/modules/mkxpz/deps/soundfont/GMGSx.SF2"
+            "default": "~/Library/Application Support/xenolauncher/modules/mkxpz/deps/soundfont/gmgsx-plus.sf2"
         },
         "midiChorus": { "type": "boolean", "label": "MIDI Chorus", "default": false },
         "midiReverb": { "type": "boolean", "label": "MIDI Reverb", "default": false },
